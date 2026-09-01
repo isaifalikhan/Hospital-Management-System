@@ -1,5 +1,6 @@
 const { Doctor, Department, User, Appointment } = require('../models');
 const { Op } = require('sequelize');
+const { searchOp } = require('../utils/search');
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SLOT_MINUTES = 30;
@@ -23,7 +24,7 @@ exports.list = async (req, res, next) => {
     if (departmentId) where.departmentId = departmentId;
 
     if (search) {
-      where.name = { [Op.like]: `%${search}%` };
+      where.name = { [searchOp]: `%${search}%` };
     }
 
     const doctors = await Doctor.findAll({

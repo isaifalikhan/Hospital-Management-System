@@ -2,12 +2,13 @@ const { Medicine, StockTransaction, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
 const { checkExpiry } = require('../utils/safetyChecks');
+const { searchOp } = require('../utils/search');
 
 exports.list = async (req, res, next) => {
   try {
     const { search, lowStock } = req.query;
     const where = {};
-    if (search) where.name = { [Op.like]: `%${search}%` };
+    if (search) where.name = { [searchOp]: `%${search}%` };
     let medicines = await Medicine.findAll({ where, order: [['name', 'ASC']] });
     if (lowStock === 'true') {
       medicines = medicines.filter(m => m.quantityInStock <= m.reorderLevel);

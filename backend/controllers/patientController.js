@@ -1,6 +1,7 @@
 const { Patient, Appointment, MedicalRecord, Invoice, Doctor, LabOrder, Admission, PrescriptionItem } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
+const { searchOp } = require('../utils/search');
 
 function generateMRN() {
   const ts = Date.now().toString().slice(-8);
@@ -14,9 +15,9 @@ exports.list = async (req, res, next) => {
     if (status) where.status = status;
     if (search) {
       where[Op.or] = [
-        { name: { [Op.like]: `%${search}%` } },
-        { mrn: { [Op.like]: `%${search}%` } },
-        { phone: { [Op.like]: `%${search}%` } },
+        { name: { [searchOp]: `%${search}%` } },
+        { mrn: { [searchOp]: `%${search}%` } },
+        { phone: { [searchOp]: `%${search}%` } },
       ];
     }
     const patients = await Patient.findAll({ where, order: [['createdAt', 'DESC']] });
