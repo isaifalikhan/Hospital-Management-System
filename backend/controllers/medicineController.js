@@ -1,6 +1,7 @@
 const { Medicine, StockTransaction, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
+const { checkExpiry } = require('../utils/safetyChecks');
 
 exports.list = async (req, res, next) => {
   try {
@@ -11,7 +12,7 @@ exports.list = async (req, res, next) => {
     if (lowStock === 'true') {
       medicines = medicines.filter(m => m.quantityInStock <= m.reorderLevel);
     }
-    res.json(medicines);
+    res.json(medicines.map((m) => ({ ...m.toJSON(), expiryStatus: checkExpiry(m.expiryDate) })));
   } catch (err) { next(err); }
 };
 
@@ -21,7 +22,7 @@ exports.get = async (req, res, next) => {
       include: [{ model: StockTransaction, separate: true, order: [['createdAt', 'DESC']], limit: 50 }],
     });
     if (!medicine) return res.status(404).json({ message: 'Medicine not found' });
-    res.json(medicine);
+    res.json({ ...medicine.toJSON(), expiryStatus: checkExpiry(medicine.expiryDate) });
   } catch (err) { next(err); }
 };
 

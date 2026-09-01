@@ -1,11 +1,29 @@
 const { MedicalRecord, Patient, Doctor, Appointment, PrescriptionItem, Medicine, sequelize } = require('../models');
 const { logAudit } = require('../utils/audit');
+const { prescriptionWarnings } = require('../utils/safetyChecks');
 
 const recordIncludes = [
   { model: Patient, attributes: ['id', 'name', 'mrn'] },
   { model: Doctor, attributes: ['id', 'name'] },
   { model: PrescriptionItem },
 ];
+
+// Allergy/expiry checks for a batch of prescription items being created at
+// once. Read-only and non-blocking (see safetyChecks.js) so it runs after
+// the write transaction commits rather than inside it.
+async function buildPrescriptionWarnings(patientId, items) {
+  if (!items.length) return [];
+  const patient = await Patient.findByPk(patientId, { attributes: ['allergies'] });
+  if (!patient) return [];
+
+  const medicineIds = items.map((i) => Number(i.medicineId)).filter(Boolean);
+  const medicines = medicineIds.length ? await Medicine.findAll({ where: { id: medicineIds } }) : [];
+  const medicineById = new Map(medicines.map((m) => [m.id, m]));
+
+  return items.flatMap((item) =>
+    prescriptionWarnings(patient.allergies, item.medicineName, medicineById.get(Number(item.medicineId)))
+  );
+}
 
 exports.list = async (req, res, next) => {
   try {
@@ -63,8 +81,9 @@ exports.create = async (req, res, next) => {
       summary: `Added medical record for patient #${patientId}`,
     });
 
+    const warnings = await buildPrescriptionWarnings(patientId, prescriptionItems);
     const full = await MedicalRecord.findByPk(record.id, { include: recordIncludes });
-    res.status(201).json(full);
+    res.status(201).json({ ...full.toJSON(), warnings });
   } catch (err) {
     await t.rollback();
     next(err);
@@ -95,7 +114,10 @@ exports.remove = async (req, res, next) => {
 exports.dispensePrescriptionItem = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
-    const item = await PrescriptionItem.findByPk(req.params.itemId, { transaction: t });
+    const item = await PrescriptionItem.findByPk(req.params.itemId, {
+      include: [{ model: MedicalRecord, attributes: ['patientId'] }],
+      transaction: t,
+    });
     if (!item) {
       await t.rollback();
       return res.status(404).json({ message: 'Prescription item not found' });
@@ -105,8 +127,9 @@ exports.dispensePrescriptionItem = async (req, res, next) => {
       return res.status(400).json({ message: 'This item has already been dispensed' });
     }
 
+    let medicine = null;
     if (item.medicineId) {
-      const medicine = await Medicine.findByPk(item.medicineId, { transaction: t });
+      medicine = await Medicine.findByPk(item.medicineId, { transaction: t });
       if (medicine) {
         if (medicine.quantityInStock < item.quantity) {
           await t.rollback();
@@ -126,7 +149,16 @@ exports.dispensePrescriptionItem = async (req, res, next) => {
       action: 'update', entityType: 'PrescriptionItem', entityId: item.id,
       summary: `Dispensed ${item.medicineName} (qty ${item.quantity})`,
     });
-    res.json(item);
+
+    // Re-checked at dispense time (not just at prescribing time) since the
+    // patient's allergy record or the medicine's stock/expiry may have
+    // changed in between. Non-blocking, same as at prescribing time.
+    const patient = item.MedicalRecord
+      ? await Patient.findByPk(item.MedicalRecord.patientId, { attributes: ['allergies'] })
+      : null;
+    const warnings = patient ? prescriptionWarnings(patient.allergies, item.medicineName, medicine) : [];
+
+    res.json({ ...item.toJSON(), warnings });
   } catch (err) {
     await t.rollback();
     next(err);

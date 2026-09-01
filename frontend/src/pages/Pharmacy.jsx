@@ -147,7 +147,19 @@ export default function Pharmacy() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-500">{m.reorderLevel}</td>
-                    <td className="px-4 py-3 text-slate-500">{m.expiryDate || '—'}</td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {m.expiryStatus === 'expired' ? (
+                        <span className="flex items-center gap-1 text-rose-600 font-medium">
+                          <AlertTriangle size={14} /> Expired {m.expiryDate}
+                        </span>
+                      ) : m.expiryStatus === 'expiring_soon' ? (
+                        <span className="flex items-center gap-1 text-amber-600 font-medium">
+                          <AlertTriangle size={14} /> {m.expiryDate}
+                        </span>
+                      ) : (
+                        m.expiryDate || '—'
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => openStock(m, 'in')} className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50" title="Stock in"><ArrowDownCircle size={16} /></button>

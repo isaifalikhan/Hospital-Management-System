@@ -1,5 +1,6 @@
 const { Patient, Doctor, Appointment, Invoice, Medicine, Department } = require('../models');
 const { Op } = require('sequelize');
+const { checkExpiry } = require('../utils/safetyChecks');
 
 function lastNDates(n) {
   const dates = [];
@@ -45,6 +46,9 @@ exports.summary = async (req, res, next) => {
 
     const outstandingRevenue = unpaidInvoices.reduce((sum, inv) => sum + (inv.total - inv.amountPaid), 0);
     const lowStockCount = allMedicines.filter(m => m.quantityInStock <= m.reorderLevel).length;
+    const expiryStatuses = allMedicines.map((m) => checkExpiry(m.expiryDate));
+    const expiredCount = expiryStatuses.filter((s) => s === 'expired').length;
+    const expiringSoonCount = expiryStatuses.filter((s) => s === 'expiring_soon').length;
 
     const paidInvoicesThisMonth = await Invoice.sum('amountPaid', {
       where: {
@@ -62,6 +66,8 @@ exports.summary = async (req, res, next) => {
       outstandingRevenue,
       revenueThisMonth: paidInvoicesThisMonth || 0,
       lowStockCount,
+      expiredCount,
+      expiringSoonCount,
       recentPatients,
       recentAppointments,
     });

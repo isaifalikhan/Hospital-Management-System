@@ -4,14 +4,14 @@ import {
   ArrowLeft, Plus, FileText, FlaskConical, BedDouble, Receipt, CalendarClock,
   Trash2, CheckCircle2, LogOut as LogOutIcon,
 } from 'lucide-react';
-import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi } from '../api';
+import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 
 const emptyRecord = { diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '' };
-const emptyPrescriptionItem = { medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
+const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
 const emptyLabOrder = { testName: '', priority: 'routine', notes: '' };
 const emptyAdmission = { ward: '', bedNumber: '', reason: '' };
 
@@ -31,6 +31,7 @@ export default function PatientDetail() {
   const [recordForm, setRecordForm] = useState(emptyRecord);
   const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [savingRecord, setSavingRecord] = useState(false);
+  const [medicines, setMedicines] = useState([]);
 
   const [labModalOpen, setLabModalOpen] = useState(false);
   const [labForm, setLabForm] = useState(emptyLabOrder);
@@ -58,6 +59,9 @@ export default function PatientDetail() {
     setRecordForm(emptyRecord);
     setPrescriptionItems([]);
     setRecordModalOpen(true);
+    if (!medicines.length) {
+      medicinesApi.list().then((res) => setMedicines(res.data)).catch(() => {});
+    }
   }
 
   function addPrescriptionRow() {
@@ -68,21 +72,40 @@ export default function PatientDetail() {
     setPrescriptionItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)));
   }
 
+  // Selecting a medicine from inventory links medicineId (so allergy/expiry
+  // checks and dispense-time stock deduction can find it) and pre-fills the
+  // free-text name, which stays editable for medicines outside inventory.
+  function selectPrescriptionMedicine(idx, medicineId) {
+    const medicine = medicines.find((m) => m.id === Number(medicineId));
+    setPrescriptionItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, medicineId, medicineName: medicine ? medicine.name : it.medicineName } : it))
+    );
+  }
+
   function removePrescriptionRow(idx) {
     setPrescriptionItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function showWarnings(warnings) {
+    if (warnings?.length) {
+      alert(`Warning:\n\n${warnings.map((w) => `- ${w.message}`).join('\n')}`);
+    }
   }
 
   async function handleAddRecord(e) {
     e.preventDefault();
     setSavingRecord(true);
     try {
-      await medicalRecordsApi.create({
+      const res = await medicalRecordsApi.create({
         ...recordForm,
         patientId: id,
-        prescriptionItems: prescriptionItems.filter((it) => it.medicineName.trim()),
+        prescriptionItems: prescriptionItems
+          .filter((it) => it.medicineName.trim())
+          .map((it) => ({ ...it, medicineId: it.medicineId ? Number(it.medicineId) : null })),
       });
       setRecordModalOpen(false);
       await load();
+      showWarnings(res.data.warnings);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to add medical record');
     } finally {
@@ -92,8 +115,9 @@ export default function PatientDetail() {
 
   async function handleDispense(itemId) {
     try {
-      await medicalRecordsApi.dispensePrescriptionItem(itemId);
+      const res = await medicalRecordsApi.dispensePrescriptionItem(itemId);
       await load();
+      showWarnings(res.data.warnings);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to dispense item');
     }
@@ -455,10 +479,19 @@ export default function PatientDetail() {
             <div className="space-y-2">
               {prescriptionItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                  <input className="input col-span-3" placeholder="Medicine" value={item.medicineName} onChange={(e) => updatePrescriptionRow(idx, 'medicineName', e.target.value)} />
+                  <select
+                    className="input col-span-2"
+                    value={item.medicineId}
+                    onChange={(e) => selectPrescriptionMedicine(idx, e.target.value)}
+                    title="Link to inventory (optional)"
+                  >
+                    <option value="">From inventory…</option>
+                    {medicines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <input className="input col-span-2" placeholder="Medicine" value={item.medicineName} onChange={(e) => updatePrescriptionRow(idx, 'medicineName', e.target.value)} />
                   <input className="input col-span-2" placeholder="Dosage" value={item.dosage} onChange={(e) => updatePrescriptionRow(idx, 'dosage', e.target.value)} />
                   <input className="input col-span-2" placeholder="Frequency" value={item.frequency} onChange={(e) => updatePrescriptionRow(idx, 'frequency', e.target.value)} />
-                  <input className="input col-span-2" placeholder="Duration" value={item.duration} onChange={(e) => updatePrescriptionRow(idx, 'duration', e.target.value)} />
+                  <input className="input col-span-1" placeholder="Duration" value={item.duration} onChange={(e) => updatePrescriptionRow(idx, 'duration', e.target.value)} />
                   <input type="number" min="1" className="input col-span-2" placeholder="Qty" value={item.quantity} onChange={(e) => updatePrescriptionRow(idx, 'quantity', e.target.value)} />
                   <button type="button" onClick={() => removePrescriptionRow(idx)} className="col-span-1 rounded p-1.5 text-rose-500 hover:bg-rose-50">
                     <Trash2 size={16} />

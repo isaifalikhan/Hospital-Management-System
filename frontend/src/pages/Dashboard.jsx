@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Stethoscope, CalendarClock, DollarSign, PackageX, Clock } from 'lucide-react';
+import { Users, Stethoscope, CalendarClock, DollarSign, PackageX, Clock, CalendarX2 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
@@ -66,6 +66,7 @@ export default function Dashboard() {
           tone="emerald"
         />
         <StatCard icon={PackageX} label="Low Stock Medicines" value={data.lowStockCount} tone="rose" />
+        <StatCard icon={CalendarX2} label="Expiring / Expired Medicines" value={data.expiredCount + data.expiringSoonCount} tone="amber" />
       </div>
 
       {analytics && (
