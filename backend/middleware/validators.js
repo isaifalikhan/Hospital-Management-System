@@ -40,11 +40,34 @@ const patientValidators = {
   ],
 };
 
+const TIME_RANGE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
+const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function validAvailableDays(value) {
+  const days = String(value).split(',').map((d) => d.trim());
+  if (!days.length || !days.every((d) => WEEKDAY_NAMES.includes(d))) {
+    throw new Error(`availableDays must be a comma-separated list of ${WEEKDAY_NAMES.join(', ')}`);
+  }
+  return true;
+}
+
+const doctorAvailabilityRules = [
+  body('availableTime').optional({ values: 'falsy' }).matches(TIME_RANGE)
+    .withMessage('availableTime must be in "HH:MM-HH:MM" format, e.g. "09:00-17:00"'),
+  body('availableDays').optional({ values: 'falsy' }).custom(validAvailableDays),
+];
+
 const doctorValidators = {
   create: [
     body('name').trim().notEmpty().withMessage('Doctor name is required'),
     body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
     body('consultationFee').optional().isFloat({ min: 0 }).withMessage('Consultation fee must be a positive number'),
+    ...doctorAvailabilityRules,
+  ],
+  update: [
+    body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
+    body('consultationFee').optional().isFloat({ min: 0 }).withMessage('Consultation fee must be a positive number'),
+    ...doctorAvailabilityRules,
   ],
 };
 

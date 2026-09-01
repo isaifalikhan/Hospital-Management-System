@@ -28,7 +28,11 @@ const reportRoutes = require('./routes/reportRoutes');
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+// Frontend and backend are same-origin in dev (Vite proxy) and in the
+// documented Vercel deployment (rewrites /api to this server), so CORS is
+// only actually needed for a separately-hosted frontend — restrict it
+// instead of reflecting every origin for a PII/PHI-handling API.
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
 app.use(express.json());
 
 // Generous general limiter, tighter one specifically on login to slow down
@@ -70,6 +74,15 @@ async function start() {
   try {
     await sequelize.authenticate();
     await sequelize.sync(); // creates tables if they don't exist
+    // Enforces "one active appointment per doctor/date/time" at the DB level
+    // so two concurrent booking requests can't both pass the app-level clash
+    // check and double-book the same slot. Cancelled appointments are
+    // excluded so a freed-up slot can be rebooked.
+    await sequelize.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS appointments_doctor_date_time_active
+       ON appointments (doctorId, date, time)
+       WHERE status <> 'cancelled'`
+    );
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);
     });

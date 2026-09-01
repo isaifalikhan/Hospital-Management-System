@@ -116,7 +116,18 @@ exports.update = async (req, res, next) => {
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
     const { notes, status } = req.body;
     if (notes !== undefined) invoice.notes = notes;
-    if (status !== undefined) invoice.status = status;
+    if (status !== undefined) {
+      // unpaid/partially_paid/paid are derived from amountPaid by
+      // recordPayment; allowing them here would let status say "paid"
+      // while amountPaid stays untouched. 'cancelled' is the only
+      // legitimate manual override.
+      if (status !== 'cancelled') {
+        return res.status(400).json({
+          message: "status can only be set to 'cancelled' here. Paid/partially paid/unpaid are derived automatically from recorded payments — use POST /:id/payments.",
+        });
+      }
+      invoice.status = status;
+    }
     await invoice.save();
     res.json(invoice);
   } catch (err) { next(err); }

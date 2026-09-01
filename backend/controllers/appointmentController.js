@@ -48,7 +48,15 @@ exports.create = async (req, res, next) => {
       return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
     }
 
-    const appt = await Appointment.create(req.body);
+    let appt;
+    try {
+      appt = await Appointment.create(req.body);
+    } catch (err) {
+      if (err.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+      }
+      throw err;
+    }
     const full = await Appointment.findByPk(appt.id, {
       include: [{ model: Patient, attributes: ['id', 'name', 'mrn'] }, { model: Doctor, attributes: ['id', 'name'] }],
     });
@@ -77,7 +85,14 @@ exports.update = async (req, res, next) => {
       }
     }
 
-    await appt.update(req.body);
+    try {
+      await appt.update(req.body);
+    } catch (err) {
+      if (err.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+      }
+      throw err;
+    }
     await logAudit(req, { action: 'update', entityType: 'Appointment', entityId: appt.id, summary: `Updated appointment #${appt.id} (status: ${appt.status})` });
     res.json(appt);
   } catch (err) { next(err); }

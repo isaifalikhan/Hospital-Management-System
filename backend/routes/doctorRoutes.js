@@ -11,7 +11,7 @@ router.get('/', doctorController.list);
 router.get('/:id', doctorController.get);
 router.get('/:id/available-slots', appointmentValidators.availableSlots, validate, doctorController.availableSlots);
 router.post('/', authorize('admin'), doctorValidators.create, validate, doctorController.create);
-router.put('/:id', authorize('admin'), doctorController.update);
+router.put('/:id', authorize('admin'), doctorValidators.update, validate, doctorController.update);
 router.delete('/:id', authorize('admin'), doctorController.remove);
 
 module.exports = router;

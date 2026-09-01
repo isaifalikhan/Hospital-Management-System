@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hms-frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-C", "frontend", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

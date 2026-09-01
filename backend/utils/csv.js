@@ -3,10 +3,18 @@
  * rows of primitives; wraps any value containing a comma, quote, or
  * newline in double quotes and escapes embedded quotes.
  */
+// Leading =, +, -, @ (and tab/CR) make a cell a live formula in Excel/Sheets;
+// prefixing with a quote forces it to be read as plain text instead
+// (CSV/formula injection mitigation).
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
 function toCsv(rows, columns) {
   const escape = (val) => {
     if (val === null || val === undefined) return '';
-    const str = String(val);
+    let str = String(val);
+    if (FORMULA_PREFIX.test(str)) {
+      str = `'${str}`;
+    }
     if (/[",\n]/.test(str)) {
       return `"${str.replace(/"/g, '""')}"`;
     }
