@@ -2,6 +2,8 @@ require('dotenv').config();
 const validateEnv = require('./config/validateEnv');
 validateEnv();
 
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -64,6 +66,19 @@ app.use('/api/lab-orders', labOrderRoutes);
 app.use('/api/admissions', admissionRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/reports', reportRoutes);
+
+// Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
+// so the whole app can run as one process on one port for LAN/offline use —
+// a no-op if nobody's built it yet, so the normal split dev workflow
+// (Vite on :5173 + this server on :5000) is unaffected.
+const frontendDist = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);
