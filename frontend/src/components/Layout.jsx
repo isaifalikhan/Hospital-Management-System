@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, CalendarClock, Receipt, Pill,
-  UserCog, LogOut, HeartPulse, Building2,
+  UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,11 +9,14 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/patients', label: 'Patients', icon: Users, roles: ['admin', 'doctor', 'receptionist'] },
   { to: '/appointments', label: 'Appointments', icon: CalendarClock, roles: ['admin', 'doctor', 'receptionist'] },
+  { to: '/lab-orders', label: 'Lab Orders', icon: FlaskConical, roles: ['admin', 'doctor'] },
+  { to: '/admissions', label: 'Admissions', icon: BedDouble, roles: ['admin', 'doctor', 'receptionist'] },
   { to: '/doctors', label: 'Doctors', icon: Stethoscope, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/departments', label: 'Departments', icon: Building2, roles: ['admin'] },
   { to: '/billing', label: 'Billing', icon: Receipt, roles: ['admin', 'receptionist'] },
   { to: '/pharmacy', label: 'Pharmacy', icon: Pill, roles: ['admin', 'pharmacist'] },
   { to: '/users', label: 'Staff Users', icon: UserCog, roles: ['admin'] },
+  { to: '/audit-log', label: 'Audit Log', icon: ScrollText, roles: ['admin'] },
 ];
 
 const roleColors = {

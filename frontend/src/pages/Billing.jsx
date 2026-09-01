@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, DollarSign, Eye } from 'lucide-react';
-import { invoicesApi, patientsApi } from '../api';
+import { Plus, Trash2, DollarSign, Eye, Download, Printer } from 'lucide-react';
+import { invoicesApi, patientsApi, reportsApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
@@ -95,15 +95,28 @@ export default function Billing() {
     }
   }
 
+  async function handleExport() {
+    try {
+      await reportsApi.downloadCsv('/reports/invoices.csv', 'invoices.csv');
+    } catch {
+      alert('Failed to export invoices');
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Billing & Invoices"
         subtitle="Create invoices and record payments"
         action={
-          <button className="btn-primary" onClick={openCreate}>
-            <Plus size={16} /> New Invoice
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="btn-secondary" onClick={handleExport}>
+              <Download size={16} /> Export CSV
+            </button>
+            <button className="btn-primary" onClick={openCreate}>
+              <Plus size={16} /> New Invoice
+            </button>
+          </div>
         }
       />
 
@@ -223,13 +236,19 @@ export default function Billing() {
 
       <Modal open={!!viewInvoice} onClose={() => setViewInvoice(null)} title={viewInvoice ? `Invoice ${viewInvoice.invoiceNumber}` : ''} wide>
         {viewInvoice && (
-          <div>
-            <div className="mb-4 flex items-center justify-between">
+          <div id="invoice-print-area">
+            <div className="mb-4 flex items-center justify-between print:mb-6">
               <div>
+                <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS</p>
                 <p className="font-medium text-slate-900">{viewInvoice.Patient?.name}</p>
-                <p className="text-sm text-slate-500">{viewInvoice.date}</p>
+                <p className="text-sm text-slate-500">Invoice {viewInvoice.invoiceNumber} · {viewInvoice.date}</p>
               </div>
-              <StatusBadge status={viewInvoice.status} />
+              <div className="flex items-center gap-2 print:hidden">
+                <StatusBadge status={viewInvoice.status} />
+                <button onClick={() => window.print()} className="btn-secondary" title="Print or save as PDF">
+                  <Printer size={16} /> Print / PDF
+                </button>
+              </div>
             </div>
 
             <table className="w-full text-sm mb-4">
@@ -267,7 +286,7 @@ export default function Billing() {
             </div>
 
             {viewInvoice.status !== 'paid' && (
-              <form onSubmit={handlePayment} className="flex items-end gap-2 border-t border-slate-200 pt-4">
+              <form onSubmit={handlePayment} className="flex items-end gap-2 border-t border-slate-200 pt-4 print:hidden">
                 <div className="flex-1">
                   <label className="label">Record Payment ($)</label>
                   <input type="number" min="0" step="0.01" className="input" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />

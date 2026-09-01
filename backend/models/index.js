@@ -10,6 +10,10 @@ const Invoice = require('./Invoice');
 const InvoiceItem = require('./InvoiceItem');
 const Medicine = require('./Medicine');
 const StockTransaction = require('./StockTransaction');
+const PrescriptionItem = require('./PrescriptionItem');
+const LabOrder = require('./LabOrder');
+const Admission = require('./Admission');
+const AuditLog = require('./AuditLog');
 
 // User <-> Doctor (a doctor may have a login account)
 User.hasOne(Doctor, { foreignKey: 'userId', onDelete: 'SET NULL' });
@@ -50,6 +54,26 @@ InvoiceItem.belongsTo(Invoice, { foreignKey: 'invoiceId' });
 Medicine.hasMany(StockTransaction, { foreignKey: 'medicineId', onDelete: 'CASCADE' });
 StockTransaction.belongsTo(Medicine, { foreignKey: 'medicineId' });
 
+// MedicalRecord <-> PrescriptionItem (structured prescriptions)
+MedicalRecord.hasMany(PrescriptionItem, { foreignKey: 'medicalRecordId', onDelete: 'CASCADE' });
+PrescriptionItem.belongsTo(MedicalRecord, { foreignKey: 'medicalRecordId' });
+
+PrescriptionItem.belongsTo(Medicine, { foreignKey: 'medicineId', allowNull: true });
+
+// Patient <-> LabOrder <-> Doctor
+Patient.hasMany(LabOrder, { foreignKey: 'patientId', onDelete: 'CASCADE' });
+LabOrder.belongsTo(Patient, { foreignKey: 'patientId' });
+
+Doctor.hasMany(LabOrder, { foreignKey: 'doctorId', onDelete: 'SET NULL' });
+LabOrder.belongsTo(Doctor, { foreignKey: 'doctorId' });
+
+// Patient <-> Admission <-> Doctor
+Patient.hasMany(Admission, { foreignKey: 'patientId', onDelete: 'CASCADE' });
+Admission.belongsTo(Patient, { foreignKey: 'patientId' });
+
+Doctor.hasMany(Admission, { foreignKey: 'doctorId', onDelete: 'SET NULL' });
+Admission.belongsTo(Doctor, { foreignKey: 'doctorId' });
+
 module.exports = {
   sequelize,
   User,
@@ -62,4 +86,8 @@ module.exports = {
   InvoiceItem,
   Medicine,
   StockTransaction,
+  PrescriptionItem,
+  LabOrder,
+  Admission,
+  AuditLog,
 };

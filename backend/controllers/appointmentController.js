@@ -1,5 +1,6 @@
 const { Appointment, Patient, Doctor } = require('../models');
 const { Op } = require('sequelize');
+const { logAudit } = require('../utils/audit');
 
 exports.list = async (req, res, next) => {
   try {
@@ -39,9 +40,21 @@ exports.create = async (req, res, next) => {
     if (!patientId || !doctorId || !date || !time) {
       return res.status(400).json({ message: 'patientId, doctorId, date, and time are required' });
     }
+
+    const clash = await Appointment.findOne({
+      where: { doctorId, date, time, status: { [Op.ne]: 'cancelled' } },
+    });
+    if (clash) {
+      return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+    }
+
     const appt = await Appointment.create(req.body);
     const full = await Appointment.findByPk(appt.id, {
       include: [{ model: Patient, attributes: ['id', 'name', 'mrn'] }, { model: Doctor, attributes: ['id', 'name'] }],
+    });
+    await logAudit(req, {
+      action: 'create', entityType: 'Appointment', entityId: appt.id,
+      summary: `Booked appointment for patient #${patientId} with doctor #${doctorId} on ${date} ${time}`,
     });
     res.status(201).json(full);
   } catch (err) { next(err); }
@@ -51,7 +64,21 @@ exports.update = async (req, res, next) => {
   try {
     const appt = await Appointment.findByPk(req.params.id);
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
+
+    if (req.body.date || req.body.time) {
+      const date = req.body.date || appt.date;
+      const time = req.body.time || appt.time;
+      const doctorId = req.body.doctorId || appt.doctorId;
+      const clash = await Appointment.findOne({
+        where: { doctorId, date, time, status: { [Op.ne]: 'cancelled' }, id: { [Op.ne]: appt.id } },
+      });
+      if (clash) {
+        return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+      }
+    }
+
     await appt.update(req.body);
+    await logAudit(req, { action: 'update', entityType: 'Appointment', entityId: appt.id, summary: `Updated appointment #${appt.id} (status: ${appt.status})` });
     res.json(appt);
   } catch (err) { next(err); }
 };
@@ -61,6 +88,7 @@ exports.remove = async (req, res, next) => {
     const appt = await Appointment.findByPk(req.params.id);
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
     await appt.destroy();
+    await logAudit(req, { action: 'delete', entityType: 'Appointment', entityId: req.params.id });
     res.json({ message: 'Appointment deleted' });
   } catch (err) { next(err); }
 };

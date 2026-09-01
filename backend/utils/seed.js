@@ -2,7 +2,8 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const {
   sequelize, User, Department, Doctor, Patient, Appointment, MedicalRecord,
-  Invoice, InvoiceItem, Medicine, StockTransaction,
+  Invoice, InvoiceItem, Medicine, StockTransaction, PrescriptionItem,
+  LabOrder, Admission, AuditLog,
 } = require('../models');
 
 async function seed() {
@@ -105,6 +106,38 @@ async function seed() {
     vitals: 'BP:128/82, Temp:98.4F, Pulse:76',
   });
 
+  await PrescriptionItem.bulkCreate([
+    {
+      medicalRecordId: record1.id, medicineName: 'Ibuprofen 400mg', dosage: '400mg',
+      frequency: 'Twice daily', duration: '7 days', quantity: 14,
+      instructions: 'Take after meals', dispensed: false,
+    },
+  ]);
+
+  await LabOrder.bulkCreate([
+    {
+      patientId: p4.id, doctorId: drLisa.id, testName: 'X-Ray (Right Knee)',
+      status: 'completed', priority: 'routine', orderedDate: yesterday, resultDate: yesterday,
+      result: 'Mild joint space narrowing consistent with early osteoarthritis. No fracture.',
+      referenceRange: 'N/A', notes: 'Correlate clinically.',
+    },
+    {
+      patientId: p1.id, doctorId: drSarah.id, testName: 'Lipid Panel',
+      status: 'ordered', priority: 'routine', orderedDate: today,
+    },
+    {
+      patientId: p2.id, doctorId: drJohn.id, testName: 'Complete Blood Count (CBC)',
+      status: 'in_progress', priority: 'urgent', orderedDate: today,
+    },
+  ]);
+
+  await Admission.bulkCreate([
+    {
+      patientId: p4.id, doctorId: drLisa.id, ward: 'Orthopedic Ward', bedNumber: 'B-12',
+      reason: 'Post-op monitoring after knee arthroscopy', admissionDate: yesterday, status: 'admitted',
+    },
+  ]);
+
   await Invoice.create({
     invoiceNumber: 'INV00000001',
     patientId: p4.id,
@@ -153,6 +186,56 @@ async function seed() {
     { medicineId: med3.id, type: 'in', quantity: 300, reason: 'Initial stock', date: today },
     { medicineId: med4.id, type: 'in', quantity: 60, reason: 'Initial stock', date: today },
     { medicineId: med4.id, type: 'out', quantity: 20, reason: 'Dispensed', date: today },
+  ]);
+
+  // Backfill a couple weeks of appointments + invoices so the dashboard
+  // trend charts have something meaningful to plot right out of the box.
+  const doctors = [drSarah, drAmit, drLisa, drJohn];
+  const patients = [p1, p2, p3, p4, p5];
+  let invoiceCounter = 3;
+  for (let i = 13; i >= 2; i--) {
+    const day = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const numEvents = 1 + ((i * 7) % 3); // deterministic pseudo-variety, 1-3 per day
+    for (let j = 0; j < numEvents; j++) {
+      const doctor = doctors[(i + j) % doctors.length];
+      const patient = patients[(i + j * 2) % patients.length];
+      const hour = 9 + ((i + j) % 7);
+      await Appointment.create({
+        patientId: patient.id,
+        doctorId: doctor.id,
+        date: day,
+        time: `${String(hour).padStart(2, '0')}:00`,
+        reason: 'Routine visit',
+        status: 'completed',
+      });
+
+      const fee = doctor.consultationFee || 100;
+      invoiceCounter += 1;
+      const invNum = `INV${String(invoiceCounter).padStart(8, '0')}`;
+      const inv = await Invoice.create({
+        invoiceNumber: invNum,
+        patientId: patient.id,
+        date: day,
+        subtotal: fee,
+        discount: 0,
+        tax: 0,
+        total: fee,
+        amountPaid: fee,
+        status: 'paid',
+        paymentMethod: 'cash',
+      });
+      await InvoiceItem.create({
+        invoiceId: inv.id, description: `${doctor.specialization || 'General'} consultation`,
+        category: 'consultation', quantity: 1, unitPrice: fee, amount: fee,
+      });
+    }
+  }
+
+  await AuditLog.bulkCreate([
+    { userName: 'Alex Admin', userRole: 'admin', action: 'create', entityType: 'Patient', entityId: p1.id, summary: `Registered patient ${p1.name} (${p1.mrn})` },
+    { userName: 'Riya Receptionist', userRole: 'receptionist', action: 'create', entityType: 'Appointment', entityId: appt1.id, summary: 'Booked appointment for patient #1 with doctor #1' },
+    { userName: 'Dr. Sarah Johnson', userRole: 'doctor', action: 'create', entityType: 'MedicalRecord', entityId: record1.id, summary: 'Added medical record for patient #4' },
+    { userName: 'Pat Pharmacist', userRole: 'pharmacist', action: 'update', entityType: 'Medicine', entityId: med2.id, summary: 'Stock removed from Amoxicillin 250mg: 20 (Dispensed)' },
   ]);
 
   console.log('\nSeed complete! Login credentials (all passwords: password123):');

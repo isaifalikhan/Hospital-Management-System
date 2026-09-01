@@ -1,5 +1,6 @@
 const { Invoice, InvoiceItem, Patient, Appointment } = require('../models');
 const { sequelize } = require('../models');
+const { logAudit } = require('../utils/audit');
 
 function generateInvoiceNumber() {
   const ts = Date.now().toString().slice(-8);
@@ -70,6 +71,11 @@ exports.create = async (req, res, next) => {
 
     await t.commit();
 
+    await logAudit(req, {
+      action: 'create', entityType: 'Invoice', entityId: invoice.id,
+      summary: `Created invoice ${invoice.invoiceNumber} for patient #${patientId} ($${total.toFixed(2)})`,
+    });
+
     const full = await Invoice.findByPk(invoice.id, {
       include: [{ model: Patient, attributes: ['id', 'name', 'mrn'] }, { model: InvoiceItem }],
     });
@@ -96,6 +102,10 @@ exports.recordPayment = async (req, res, next) => {
       invoice.status = 'partially_paid';
     }
     await invoice.save();
+    await logAudit(req, {
+      action: 'update', entityType: 'Invoice', entityId: invoice.id,
+      summary: `Recorded payment of $${Number(amount).toFixed(2)} on ${invoice.invoiceNumber}`,
+    });
     res.json(invoice);
   } catch (err) { next(err); }
 };

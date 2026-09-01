@@ -11,6 +11,8 @@ const STYLES = {
   outpatient: 'bg-sky-100 text-sky-700',
   active: 'bg-emerald-100 text-emerald-700',
   inactive: 'bg-slate-200 text-slate-600',
+  ordered: 'bg-sky-100 text-sky-700',
+  in_progress: 'bg-amber-100 text-amber-700',
 };
 
 export default function StatusBadge({ status }) {

@@ -13,6 +13,9 @@ import Appointments from './pages/Appointments';
 import Billing from './pages/Billing';
 import Pharmacy from './pages/Pharmacy';
 import StaffUsers from './pages/StaffUsers';
+import LabOrders from './pages/LabOrders';
+import Admissions from './pages/Admissions';
+import AuditLog from './pages/AuditLog';
 
 export default function App() {
   return (
@@ -63,6 +66,33 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
                   <Appointments />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/lab-orders"
+              element={
+                <ProtectedRoute roles={['admin', 'doctor']}>
+                  <LabOrders />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admissions"
+              element={
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                  <Admissions />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/audit-log"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AuditLog />
                 </ProtectedRoute>
               }
             />

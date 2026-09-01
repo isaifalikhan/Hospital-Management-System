@@ -1,6 +1,11 @@
 require('dotenv').config();
+const validateEnv = require('./config/validateEnv');
+validateEnv();
+
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const { sequelize } = require('./models');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
@@ -15,11 +20,29 @@ const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const labOrderRoutes = require('./routes/labOrderRoutes');
+const admissionRoutes = require('./routes/admissionRoutes');
+const auditLogRoutes = require('./routes/auditLogRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Generous general limiter, tighter one specifically on login to slow down
+// credential-guessing without getting in the way of normal app usage.
+const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000, standardHeaders: true, legacyHeaders: false });
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts. Please try again in a few minutes.' },
+});
+app.use('/api', generalLimiter);
+app.use('/api/auth/login', loginLimiter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
@@ -33,6 +56,10 @@ app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/lab-orders', labOrderRoutes);
+app.use('/api/admissions', admissionRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

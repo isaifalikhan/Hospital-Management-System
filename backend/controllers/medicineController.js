@@ -1,5 +1,6 @@
 const { Medicine, StockTransaction, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const { logAudit } = require('../utils/audit');
 
 exports.list = async (req, res, next) => {
   try {
@@ -83,6 +84,10 @@ exports.adjustStock = async (req, res, next) => {
     }, { transaction: t });
 
     await t.commit();
+    await logAudit(req, {
+      action: 'update', entityType: 'Medicine', entityId: medicine.id,
+      summary: `Stock ${type === 'in' ? 'added to' : 'removed from'} ${medicine.name}: ${quantity} (${reason || 'no reason given'})`,
+    });
     res.json(medicine);
   } catch (err) {
     await t.rollback();

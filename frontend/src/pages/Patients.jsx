@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Eye } from 'lucide-react';
-import { patientsApi } from '../api';
+import { Plus, Search, Pencil, Trash2, Eye, Download } from 'lucide-react';
+import { patientsApi, reportsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
@@ -16,6 +16,7 @@ export default function Patients() {
   const { user } = useAuth();
   const canEdit = ['admin', 'receptionist'].includes(user?.role);
   const canDelete = user?.role === 'admin';
+  const canExport = ['admin', 'receptionist'].includes(user?.role);
 
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
@@ -84,17 +85,32 @@ export default function Patients() {
     }
   }
 
+  async function handleExport() {
+    try {
+      await reportsApi.downloadCsv('/reports/patients.csv', 'patients.csv');
+    } catch {
+      alert('Failed to export patients');
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Patients"
         subtitle="Register and manage patient records"
         action={
-          canEdit && (
-            <button className="btn-primary" onClick={openCreate}>
-              <Plus size={16} /> New Patient
-            </button>
-          )
+          <div className="flex items-center gap-2">
+            {canExport && (
+              <button className="btn-secondary" onClick={handleExport}>
+                <Download size={16} /> Export CSV
+              </button>
+            )}
+            {canEdit && (
+              <button className="btn-primary" onClick={openCreate}>
+                <Plus size={16} /> New Patient
+              </button>
+            )}
+          </div>
         }
       />
 
