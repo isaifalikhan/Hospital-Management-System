@@ -1,0 +1,101 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Patients from './pages/Patients';
+import PatientDetail from './pages/PatientDetail';
+import Doctors from './pages/Doctors';
+import Departments from './pages/Departments';
+import Appointments from './pages/Appointments';
+import Billing from './pages/Billing';
+import Pharmacy from './pages/Pharmacy';
+import StaffUsers from './pages/StaffUsers';
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Dashboard />} />
+
+            <Route
+              path="/patients"
+              element={
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                  <Patients />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patients/:id"
+              element={
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                  <PatientDetail />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="/doctors" element={<Doctors />} />
+
+            <Route
+              path="/departments"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Departments />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                  <Appointments />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/billing"
+              element={
+                <ProtectedRoute roles={['admin', 'receptionist']}>
+                  <Billing />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/pharmacy"
+              element={
+                <ProtectedRoute roles={['admin', 'pharmacist']}>
+                  <Pharmacy />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <StaffUsers />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
