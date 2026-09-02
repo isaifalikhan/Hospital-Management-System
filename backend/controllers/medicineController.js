@@ -4,6 +4,15 @@ const { logAudit } = require('../utils/audit');
 const { checkExpiry } = require('../utils/safetyChecks');
 const { searchOp } = require('../utils/search');
 
+// Same low-stock threshold used for the existing low-stock flag: at or under
+// reorderLevel. Suggests restocking up to double the reorder level, minus
+// whatever is already on hand, so the shelf lands comfortably above the
+// threshold again instead of right back at it.
+function suggestedReorderQty(medicine) {
+  if (medicine.quantityInStock > medicine.reorderLevel) return 0;
+  return Math.max(0, medicine.reorderLevel * 2 - medicine.quantityInStock);
+}
+
 exports.list = async (req, res, next) => {
   try {
     const { search, lowStock } = req.query;
@@ -13,7 +22,11 @@ exports.list = async (req, res, next) => {
     if (lowStock === 'true') {
       medicines = medicines.filter(m => m.quantityInStock <= m.reorderLevel);
     }
-    res.json(medicines.map((m) => ({ ...m.toJSON(), expiryStatus: checkExpiry(m.expiryDate) })));
+    res.json(medicines.map((m) => ({
+      ...m.toJSON(),
+      expiryStatus: checkExpiry(m.expiryDate),
+      suggestedReorderQty: suggestedReorderQty(m),
+    })));
   } catch (err) { next(err); }
 };
 
@@ -23,7 +36,11 @@ exports.get = async (req, res, next) => {
       include: [{ model: StockTransaction, separate: true, order: [['createdAt', 'DESC']], limit: 50 }],
     });
     if (!medicine) return res.status(404).json({ message: 'Medicine not found' });
-    res.json({ ...medicine.toJSON(), expiryStatus: checkExpiry(medicine.expiryDate) });
+    res.json({
+      ...medicine.toJSON(),
+      expiryStatus: checkExpiry(medicine.expiryDate),
+      suggestedReorderQty: suggestedReorderQty(medicine),
+    });
   } catch (err) { next(err); }
 };
 

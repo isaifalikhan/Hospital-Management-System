@@ -14,6 +14,8 @@ const PrescriptionItem = require('./PrescriptionItem');
 const LabOrder = require('./LabOrder');
 const Admission = require('./Admission');
 const AuditLog = require('./AuditLog');
+const StaffAttendance = require('./StaffAttendance');
+const Shift = require('./Shift');
 
 // User <-> Doctor (a doctor may have a login account)
 User.hasOne(Doctor, { foreignKey: 'userId', onDelete: 'SET NULL' });
@@ -74,6 +76,14 @@ Admission.belongsTo(Patient, { foreignKey: 'patientId' });
 Doctor.hasMany(Admission, { foreignKey: 'doctorId', onDelete: 'SET NULL' });
 Admission.belongsTo(Doctor, { foreignKey: 'doctorId' });
 
+// User <-> StaffAttendance (clock-in/out log)
+User.hasMany(StaffAttendance, { foreignKey: 'userId', onDelete: 'CASCADE' });
+StaffAttendance.belongsTo(User, { foreignKey: 'userId' });
+
+// User <-> Shift (weekly roster assignments)
+User.hasMany(Shift, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Shift.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
   sequelize,
   User,
@@ -90,4 +100,6 @@ module.exports = {
   LabOrder,
   Admission,
   AuditLog,
+  StaffAttendance,
+  Shift,
 };

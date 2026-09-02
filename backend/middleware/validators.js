@@ -123,6 +123,23 @@ const labOrderValidators = {
   ],
 };
 
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const shiftValidators = {
+  create: [
+    body('userId').isInt().withMessage('A valid userId is required'),
+    body('date').isISO8601().withMessage('A valid date (YYYY-MM-DD) is required'),
+    body('startTime').matches(HHMM).withMessage('startTime must be in HH:MM format'),
+    body('endTime').matches(HHMM).withMessage('endTime must be in HH:MM format'),
+  ],
+  update: [
+    body('userId').optional().isInt().withMessage('A valid userId is required'),
+    body('date').optional({ values: 'falsy' }).isISO8601().withMessage('A valid date (YYYY-MM-DD) is required'),
+    body('startTime').optional({ values: 'falsy' }).matches(HHMM).withMessage('startTime must be in HH:MM format'),
+    body('endTime').optional({ values: 'falsy' }).matches(HHMM).withMessage('endTime must be in HH:MM format'),
+  ],
+};
+
 module.exports = {
   authValidators,
   userValidators,
@@ -133,4 +150,5 @@ module.exports = {
   medicineValidators,
   admissionValidators,
   labOrderValidators,
+  shiftValidators,
 };
