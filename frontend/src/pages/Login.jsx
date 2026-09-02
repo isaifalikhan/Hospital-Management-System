@@ -105,6 +105,10 @@ export default function Login() {
             ))}
           </div>
         </div>
+
+        <p className="mt-4 text-center text-xs text-slate-400">
+          Patient? <a href="/portal/login" className="text-indigo-600 hover:underline">Sign in to the patient portal</a>.
+        </p>
       </div>
     </div>
   );

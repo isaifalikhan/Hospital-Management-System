@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BedDouble, Filter, Eye, Printer } from 'lucide-react';
-import { admissionsApi } from '../api';
+import { admissionsApi, aiApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
@@ -31,6 +31,24 @@ export default function Admissions() {
       alert(err.response?.data?.message || 'Failed to discharge patient');
       throw err;
     }
+  }
+
+  // Drafts a discharge summary from this admission's own ward/reason/dates —
+  // AI_API_KEY-backed if configured, otherwise a built-in template (see
+  // backend/utils/aiSummaryService.js). Passed to DischargeModal, which only
+  // pre-fills its notes textarea; nothing is saved until submit.
+  async function generateDischargeSummary(admission) {
+    const res = await aiApi.generateSummary({
+      title: 'Discharge Summary',
+      patientName: admission.Patient?.name,
+      fields: {
+        Ward: `${admission.ward} (bed ${admission.bedNumber})`,
+        'Reason for admission': admission.reason,
+        'Admission date': admission.admissionDate,
+        'Attending doctor': admission.Doctor?.name,
+      },
+    });
+    return res.data.summary;
   }
 
   const activeCount = admissions.filter((a) => a.status === 'admitted').length;
@@ -108,6 +126,7 @@ export default function Admissions() {
         admission={dischargeTarget}
         onClose={() => setDischargeTarget(null)}
         onSubmit={handleDischargeSubmit}
+        onGenerateSummary={generateDischargeSummary}
       />
 
       <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">

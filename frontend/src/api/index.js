@@ -1,4 +1,5 @@
 import client from './client';
+import portalClient from './portalClient';
 
 export const authApi = {
   login: (username, password) => client.post('/auth/login', { username, password }),
@@ -18,6 +19,7 @@ export const patientsApi = {
   create: (data) => client.post('/patients', data),
   update: (id, data) => client.put(`/patients/${id}`, data),
   remove: (id) => client.delete(`/patients/${id}`),
+  setPortalPin: (id, data) => client.put(`/patients/${id}/portal-pin`, data),
 };
 
 export const doctorsApi = {
@@ -151,4 +153,22 @@ export const publicApi = {
   listDoctors: () => client.get('/public/doctors'),
   availableSlots: (doctorId, date) => client.get(`/public/doctors/${doctorId}/available-slots`, { params: { date } }),
   book: (data) => client.post('/public/appointments', data),
+};
+
+export const aiApi = {
+  // fields: an object of label -> value, e.g. { Diagnosis: '...', Treatment: '...' }
+  generateSummary: (data) => client.post('/ai/summary', data),
+};
+
+// Separate portal client/instance/localStorage — see api/portalClient.js.
+export const patientPortalApi = {
+  login: (phone, pin) => portalClient.post('/login', { phone, pin }),
+  me: () => portalClient.get('/me'),
+  doctors: () => portalClient.get('/doctors'),
+  availableSlots: (doctorId, date) => portalClient.get(`/doctors/${doctorId}/available-slots`, { params: { date } }),
+  appointments: () => portalClient.get('/appointments'),
+  bookAppointment: (data) => portalClient.post('/appointments', data),
+  cancelAppointment: (id) => portalClient.post(`/appointments/${id}/cancel`),
+  medicalRecords: () => portalClient.get('/medical-records'),
+  invoices: () => portalClient.get('/invoices'),
 };

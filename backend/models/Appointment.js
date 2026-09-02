@@ -15,6 +15,11 @@ const Appointment = sequelize.define('Appointment', {
   // appointment (see backend/utils/reminderScheduler.js), so the scheduler
   // never emails the same patient twice for the same visit.
   reminderSentAt: { type: DataTypes.DATE, allowNull: true },
+  // Telemedicine: when true, videoLink holds a free Jitsi Meet room URL
+  // (https://meet.jit.si/<uuid>) generated server-side at booking time —
+  // no API key or third-party account needed. See utils/telemedicine.js.
+  isVideoConsult: { type: DataTypes.BOOLEAN, defaultValue: false },
+  videoLink: { type: DataTypes.STRING, allowNull: true },
 }, {
   tableName: 'appointments',
   timestamps: true,

@@ -1,6 +1,7 @@
 const { Appointment, Patient, Doctor } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
+const { buildVideoConsultLink } = require('../utils/telemedicine');
 
 exports.list = async (req, res, next) => {
   try {
@@ -48,9 +49,16 @@ exports.create = async (req, res, next) => {
       return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
     }
 
+    // Generate the Jitsi room link server-side at booking time (not
+    // client-supplied) so it can't be spoofed to point somewhere else.
+    const payload = { ...req.body };
+    if (payload.isVideoConsult) {
+      payload.videoLink = buildVideoConsultLink();
+    }
+
     let appt;
     try {
-      appt = await Appointment.create(req.body);
+      appt = await Appointment.create(payload);
     } catch (err) {
       if (err.name === 'SequelizeUniqueConstraintError') {
         return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
@@ -85,8 +93,15 @@ exports.update = async (req, res, next) => {
       }
     }
 
+    const updates = { ...req.body };
+    // Only mint a new room the first time video is turned on for this
+    // appointment; once a link exists we keep it so it stays shareable.
+    if (updates.isVideoConsult && !appt.videoLink) {
+      updates.videoLink = buildVideoConsultLink();
+    }
+
     try {
-      await appt.update(req.body);
+      await appt.update(updates);
     } catch (err) {
       if (err.name === 'SequelizeUniqueConstraintError') {
         return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });

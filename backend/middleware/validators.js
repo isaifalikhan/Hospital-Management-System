@@ -38,6 +38,10 @@ const patientValidators = {
     body('gender').optional({ values: 'falsy' }).isIn(['male', 'female', 'other']).withMessage('Invalid gender'),
     body('dob').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid date of birth'),
   ],
+  setPortalPin: [
+    body('pin').matches(/^\d{4,6}$/).withMessage('PIN must be 4-6 digits'),
+    body('portalEmail').optional({ values: 'falsy' }).isEmail().withMessage('Invalid portal email address'),
+  ],
 };
 
 const TIME_RANGE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
@@ -77,9 +81,31 @@ const appointmentValidators = {
     body('doctorId').isInt().withMessage('A valid doctorId is required'),
     body('date').isISO8601().withMessage('A valid date (YYYY-MM-DD) is required'),
     body('time').matches(/^\d{2}:\d{2}$/).withMessage('Time must be in HH:MM format'),
+    body('isVideoConsult').optional().isBoolean().withMessage('isVideoConsult must be true or false'),
   ],
   availableSlots: [
     query('date').isISO8601().withMessage('A valid date query param is required'),
+  ],
+};
+
+const patientPortalValidators = {
+  login: [
+    body('phone').trim().notEmpty().withMessage('Phone number is required'),
+    body('pin').matches(/^\d{4,6}$/).withMessage('PIN must be 4-6 digits'),
+  ],
+  bookAppointment: [
+    body('doctorId').isInt().withMessage('A valid doctorId is required'),
+    body('date').isISO8601().withMessage('A valid date (YYYY-MM-DD) is required'),
+    body('time').matches(/^\d{2}:\d{2}$/).withMessage('Time must be in HH:MM format'),
+    body('isVideoConsult').optional().isBoolean().withMessage('isVideoConsult must be true or false'),
+  ],
+};
+
+const aiValidators = {
+  summary: [
+    body('title').optional({ values: 'falsy' }).isString(),
+    body('patientName').optional({ values: 'falsy' }).isString(),
+    body('fields').isObject().withMessage('fields must be an object of label -> value'),
   ],
 };
 
@@ -196,4 +222,6 @@ module.exports = {
   medicalRecordValidators,
   dashboardValidators,
   publicValidators,
+  patientPortalValidators,
+  aiValidators,
 };

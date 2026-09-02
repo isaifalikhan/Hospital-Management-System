@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Plus, FileText, FlaskConical, BedDouble, Receipt, CalendarClock,
-  Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer,
+  Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer, Video, Sparkles,
 } from 'lucide-react';
-import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi } from '../api';
+import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi, aiApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -25,6 +25,7 @@ export default function PatientDetail() {
   const canOrderLab = ['admin', 'doctor'].includes(user?.role);
   const canAdmit = ['admin', 'doctor', 'receptionist'].includes(user?.role);
   const canDispense = ['admin', 'pharmacist'].includes(user?.role);
+  const canManagePortalAccess = ['admin', 'receptionist'].includes(user?.role);
 
   const [patient, setPatient] = useState(null);
   const [error, setError] = useState('');
@@ -34,6 +35,7 @@ export default function PatientDetail() {
   const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [savingRecord, setSavingRecord] = useState(false);
   const [medicines, setMedicines] = useState([]);
+  const [generatingNotes, setGeneratingNotes] = useState(false);
 
   const [labModalOpen, setLabModalOpen] = useState(false);
   const [labForm, setLabForm] = useState(emptyLabOrder);
@@ -47,6 +49,11 @@ export default function PatientDetail() {
   const [viewRecord, setViewRecord] = useState(null);
 
   const [showTimeline, setShowTimeline] = useState(true);
+
+  const [pin, setPin] = useState('');
+  const [portalEmail, setPortalEmail] = useState('');
+  const [savingPin, setSavingPin] = useState(false);
+  const [pinMessage, setPinMessage] = useState('');
 
   async function load() {
     try {
@@ -118,6 +125,30 @@ export default function PatientDetail() {
     }
   }
 
+  // Drafts visit notes from the diagnosis/treatment/vitals already entered
+  // in this form. Uses AI_API_KEY server-side if configured, otherwise a
+  // built-in template — either way it only pre-fills the (still editable)
+  // Notes textarea; nothing is saved until the doctor reviews and submits.
+  async function handleGenerateNotes() {
+    setGeneratingNotes(true);
+    try {
+      const res = await aiApi.generateSummary({
+        title: 'Visit Notes',
+        patientName: patient?.name,
+        fields: {
+          Diagnosis: recordForm.diagnosis,
+          Treatment: recordForm.treatment,
+          Vitals: recordForm.vitals,
+        },
+      });
+      setRecordForm((f) => ({ ...f, notes: res.data.summary }));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to generate summary');
+    } finally {
+      setGeneratingNotes(false);
+    }
+  }
+
   async function handleDispense(itemId) {
     try {
       const res = await medicalRecordsApi.dispensePrescriptionItem(itemId);
@@ -179,6 +210,40 @@ export default function PatientDetail() {
     }
   }
 
+  // Drafts a discharge summary from this admission's own ward/reason/dates —
+  // AI_API_KEY-backed if configured, otherwise a built-in template (see
+  // backend/utils/aiSummaryService.js). Passed to DischargeModal, which only
+  // pre-fills its notes textarea; nothing is saved until submit.
+  async function generateDischargeSummary(admission) {
+    const res = await aiApi.generateSummary({
+      title: 'Discharge Summary',
+      patientName: patient?.name,
+      fields: {
+        Ward: `${admission.ward} (bed ${admission.bedNumber})`,
+        'Reason for admission': admission.reason,
+        'Admission date': admission.admissionDate,
+        'Attending doctor': admission.Doctor?.name,
+      },
+    });
+    return res.data.summary;
+  }
+
+  // --- Patient portal access ---
+  async function handleSetPin(e) {
+    e.preventDefault();
+    setSavingPin(true);
+    setPinMessage('');
+    try {
+      await patientsApi.setPortalPin(id, { pin, portalEmail: portalEmail || undefined });
+      setPin('');
+      setPinMessage('Portal PIN set. Share it with the patient along with the phone number on file.');
+    } catch (err) {
+      setPinMessage(err.response?.data?.message || 'Failed to set portal PIN');
+    } finally {
+      setSavingPin(false);
+    }
+  }
+
   if (error) return <div className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700">{error}</div>;
   if (!patient) return <div className="text-slate-500">Loading...</div>;
 
@@ -237,6 +302,38 @@ export default function PatientDetail() {
           </dl>
         </div>
 
+        {canManagePortalAccess && (
+          <div className="card p-5">
+            <h2 className="mb-1 text-sm font-semibold text-slate-900">Patient Portal Access</h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Set a PIN so this patient can sign in at /portal/login with their phone number ({patient.phone || 'no phone on file'}) to view appointments, records &amp; bills.
+            </p>
+            <form onSubmit={handleSetPin} className="space-y-2">
+              <input
+                className="input"
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="New 4-6 digit PIN"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                required
+              />
+              <input
+                className="input"
+                type="email"
+                placeholder="Portal email (optional)"
+                value={portalEmail}
+                onChange={(e) => setPortalEmail(e.target.value)}
+              />
+              <button type="submit" className="btn-secondary w-full" disabled={savingPin || pin.length < 4}>
+                {savingPin ? 'Saving...' : 'Set PIN'}
+              </button>
+              {pinMessage && <p className="text-xs text-slate-600">{pinMessage}</p>}
+            </form>
+          </div>
+        )}
+
         <div className="card p-5 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Visit Timeline</h2>
@@ -281,6 +378,11 @@ export default function PatientDetail() {
                   <div>
                     <p className="font-medium text-slate-800">{a.date} at {a.time}</p>
                     <p className="text-xs text-slate-500">Dr. {a.Doctor?.name?.replace(/^Dr\.?\s*/, '') || 'Unassigned'} • {a.reason || 'No reason given'}</p>
+                    {a.isVideoConsult && a.videoLink && (
+                      <a href={a.videoLink} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline">
+                        <Video size={12} /> Join Video Call
+                      </a>
+                    )}
                   </div>
                   <StatusBadge status={a.status} />
                 </li>
@@ -524,8 +626,19 @@ export default function PatientDetail() {
             <textarea className="input" rows={2} value={recordForm.prescription} onChange={(e) => setRecordForm({ ...recordForm, prescription: e.target.value })} />
           </div>
           <div>
-            <label className="label">Notes</label>
-            <textarea className="input" rows={2} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} />
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label mb-0">Notes</label>
+              <button
+                type="button"
+                onClick={handleGenerateNotes}
+                disabled={generatingNotes || (!recordForm.diagnosis && !recordForm.treatment && !recordForm.vitals)}
+                className="flex items-center gap-1 text-xs text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                title="Draft notes from the diagnosis/treatment/vitals above — review before saving"
+              >
+                <Sparkles size={13} /> {generatingNotes ? 'Generating...' : 'Generate Summary'}
+              </button>
+            </div>
+            <textarea className="input" rows={3} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} placeholder="Add or generate a summary, then edit as needed" />
           </div>
           <div>
             <label className="label">Doctor's Signature</label>
@@ -588,6 +701,7 @@ export default function PatientDetail() {
         admission={dischargeTarget}
         onClose={() => setDischargeTarget(null)}
         onSubmit={handleDischargeSubmit}
+        onGenerateSummary={generateDischargeSummary}
       />
 
       <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">

@@ -15,6 +15,12 @@ const Patient = sequelize.define('Patient', {
   emergencyContactPhone: { type: DataTypes.STRING, allowNull: true },
   allergies: { type: DataTypes.TEXT, allowNull: true },
   status: { type: DataTypes.ENUM('admitted', 'discharged', 'outpatient'), defaultValue: 'outpatient' },
+  // Patient self-service portal login. portalPin is bcrypt-hashed exactly like
+  // User.password (see authController.js) — never stored or returned in
+  // plaintext. Both are optional: a patient can't log into the portal until
+  // a receptionist/admin sets an initial PIN from the patient profile screen.
+  portalPin: { type: DataTypes.STRING, allowNull: true },
+  portalEmail: { type: DataTypes.STRING, allowNull: true },
 }, {
   tableName: 'patients',
   timestamps: true,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, Filter, ChevronLeft, ChevronRight, List, CalendarDays, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Filter, ChevronLeft, ChevronRight, List, CalendarDays, Download, Video } from 'lucide-react';
 import { appointmentsApi, patientsApi, doctorsApi, reportsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
@@ -7,7 +7,7 @@ import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
 
 const today = new Date().toISOString().slice(0, 10);
-const emptyForm = { patientId: '', doctorId: '', date: today, time: '09:00', reason: '', status: 'scheduled', notes: '' };
+const emptyForm = { patientId: '', doctorId: '', date: today, time: '09:00', reason: '', status: 'scheduled', notes: '', isVideoConsult: false };
 
 function startOfWeek(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -104,6 +104,7 @@ export default function Appointments() {
     setForm({
       patientId: appt.patientId, doctorId: appt.doctorId, date: appt.date, time: appt.time,
       reason: appt.reason || '', status: appt.status, notes: appt.notes || '',
+      isVideoConsult: !!appt.isVideoConsult,
     });
     setModalOpen(true);
   }
@@ -272,7 +273,20 @@ export default function Appointments() {
                     <td className="px-4 py-3 text-slate-800">{a.date} <span className="text-slate-400">{a.time}</span></td>
                     <td className="px-4 py-3 font-medium text-slate-900">{a.Patient?.name}</td>
                     <td className="px-4 py-3 text-slate-600">{a.Doctor?.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{a.reason || '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {a.reason || '—'}
+                      {a.isVideoConsult && a.videoLink && (
+                        <a
+                          href={a.videoLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline"
+                          title="Join video call"
+                        >
+                          <Video size={12} /> Join
+                        </a>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       {canManage && a.status === 'scheduled' ? (
                         <div className="flex items-center gap-1">
@@ -382,6 +396,16 @@ export default function Appointments() {
           <div className="sm:col-span-2">
             <label className="label">Reason</label>
             <input className="input" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.isVideoConsult}
+                onChange={(e) => setForm({ ...form, isVideoConsult: e.target.checked })}
+              />
+              Video consultation (generates a Jitsi Meet link when saved)
+            </label>
           </div>
           {editing && (
             <div>

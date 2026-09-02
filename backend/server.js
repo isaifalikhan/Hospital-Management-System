@@ -31,6 +31,8 @@ const shiftRoutes = require('./routes/shiftRoutes');
 const backupRoutes = require('./routes/backupRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const { startReminderScheduler } = require('./utils/reminderScheduler');
+const patientPortalRoutes = require('./routes/patientPortalRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -62,9 +64,19 @@ const publicBookingLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: 'Too many booking attempts. Please try again later.' },
 });
+// A 4-6 digit portal PIN is a much smaller search space than a staff
+// password, so its login gets an even tighter cap than loginLimiter.
+const portalLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts. Please try again in a few minutes.' },
+});
 app.use('/api', generalLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/public/appointments', publicBookingLimiter);
+app.use('/api/patient-portal/login', portalLoginLimiter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
@@ -86,6 +98,8 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/admin', backupRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/patient-portal', patientPortalRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
 // so the whole app can run as one process on one port for LAN/offline use —
