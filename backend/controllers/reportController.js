@@ -1,5 +1,6 @@
 const { Patient, Appointment, Invoice, Doctor } = require('../models');
 const { toCsv, sendCsv } = require('../utils/csv');
+const { computeOwnerInsights } = require('../utils/ownerInsights');
 
 exports.exportPatients = async (req, res, next) => {
   try {
@@ -57,5 +58,57 @@ exports.exportInvoices = async (req, res, next) => {
       { label: 'Status', value: (i) => i.status },
     ]);
     sendCsv(res, `invoices-${Date.now()}.csv`, csv);
+  } catch (err) { next(err); }
+};
+
+// Multi-section owner insights report: revenue by doctor, revenue by
+// department, doctor utilization, and ward/bed occupancy, all for the same
+// date range (defaults to the last 30 days) shown on the admin Insights
+// page. Uses the shared computeOwnerInsights() so the CSV always matches
+// what's on screen.
+exports.exportOwnerInsights = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const insights = await computeOwnerInsights({ startDate, endDate });
+
+    const revenueByDoctorCsv = toCsv(insights.revenueByDoctor, [
+      { label: 'Doctor', value: (r) => r.name },
+      { label: 'Revenue', value: (r) => r.revenue },
+    ]);
+    const revenueByDepartmentCsv = toCsv(insights.revenueByDepartment, [
+      { label: 'Department', value: (r) => r.name },
+      { label: 'Revenue', value: (r) => r.revenue },
+    ]);
+    const utilizationCsv = toCsv(insights.doctorUtilization, [
+      { label: 'Doctor', value: (r) => r.doctorName },
+      { label: 'Department', value: (r) => r.department },
+      { label: 'Completed Appointments', value: (r) => r.completedAppointments },
+      { label: 'Available Slots', value: (r) => r.availableSlots },
+      { label: 'Utilization %', value: (r) => (r.utilizationPct ?? '') },
+    ]);
+    const wardCsv = toCsv(insights.wardOccupancy, [
+      { label: 'Ward', value: (r) => r.ward },
+      { label: 'Beds Ever Used', value: (r) => r.bedsEverUsed },
+      { label: 'Active Admissions', value: (r) => r.activeAdmissions },
+      { label: 'Occupancy %', value: (r) => r.occupancyPct },
+    ]);
+
+    const csv = [
+      `Owner Insights Report,${insights.startDate} to ${insights.endDate}`,
+      '',
+      'Revenue by Doctor',
+      revenueByDoctorCsv,
+      '',
+      'Revenue by Department',
+      revenueByDepartmentCsv,
+      '',
+      'Doctor Utilization',
+      utilizationCsv,
+      '',
+      'Ward / Bed Occupancy (bed count is the distinct ward+bed combinations ever used, not a configured capacity)',
+      wardCsv,
+    ].join('\r\n');
+
+    sendCsv(res, `owner-insights-${Date.now()}.csv`, csv);
   } catch (err) { next(err); }
 };

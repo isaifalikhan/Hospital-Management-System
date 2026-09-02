@@ -153,6 +153,13 @@ const medicalRecordValidators = {
   ],
 };
 
+const dashboardValidators = {
+  ownerInsights: [
+    query('startDate').optional({ values: 'falsy' }).isISO8601().withMessage('startDate must be a valid date (YYYY-MM-DD)'),
+    query('endDate').optional({ values: 'falsy' }).isISO8601().withMessage('endDate must be a valid date (YYYY-MM-DD)'),
+  ],
+};
+
 module.exports = {
   authValidators,
   userValidators,
@@ -165,4 +172,5 @@ module.exports = {
   labOrderValidators,
   shiftValidators,
   medicalRecordValidators,
+  dashboardValidators,
 };

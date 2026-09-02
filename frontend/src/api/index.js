@@ -9,6 +9,7 @@ export const authApi = {
 export const dashboardApi = {
   summary: () => client.get('/dashboard/summary'),
   analytics: () => client.get('/dashboard/analytics'),
+  ownerInsights: (params) => client.get('/dashboard/owner-insights', { params }),
 };
 
 export const patientsApi = {

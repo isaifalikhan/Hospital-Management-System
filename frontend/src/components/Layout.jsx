@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, CalendarClock, Receipt, Pill,
-  UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText,
+  UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText, LineChart,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { to: '/pharmacy', label: 'Pharmacy', icon: Pill, roles: ['admin', 'pharmacist'] },
   { to: '/users', label: 'Staff Users', icon: UserCog, roles: ['admin'] },
   { to: '/audit-log', label: 'Audit Log', icon: ScrollText, roles: ['admin'] },
+  { to: '/insights', label: 'Owner Insights', icon: LineChart, roles: ['admin'] },
 ];
 
 const roleColors = {
