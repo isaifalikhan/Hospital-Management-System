@@ -13,6 +13,28 @@ function computeTotals(items, discount = 0, tax = 0) {
   return { subtotal, total: Math.max(total, 0) };
 }
 
+// UPI (India) "scan to pay" nudge: when the hospital has configured UPI_ID,
+// attach a ready-to-encode upi://pay deep link for the invoice's outstanding
+// balance so the frontend can render a QR code on the invoice view. This is
+// a payment *nudge* only, not a live payment integration — front desk still
+// records the actual payment via POST /:id/payments.
+function attachUpiPaymentUri(invoiceInstance) {
+  const data = invoiceInstance.toJSON();
+  const upiId = process.env.UPI_ID && process.env.UPI_ID.trim();
+  const balanceDue = Number(data.total) - Number(data.amountPaid);
+  if (upiId && balanceDue > 0 && data.status !== 'cancelled') {
+    const params = [
+      `pa=${encodeURIComponent(upiId)}`,
+      `pn=${encodeURIComponent('MediCare HMS')}`,
+      `am=${encodeURIComponent(balanceDue.toFixed(2))}`,
+      'cu=INR',
+      `tn=${encodeURIComponent(`Invoice ${data.invoiceNumber}`)}`,
+    ];
+    data.upiPaymentUri = `upi://pay?${params.join('&')}`;
+  }
+  return data;
+}
+
 exports.list = async (req, res, next) => {
   try {
     const { patientId, status } = req.query;
@@ -24,7 +46,7 @@ exports.list = async (req, res, next) => {
       include: [{ model: Patient, attributes: ['id', 'name', 'mrn'] }, { model: InvoiceItem }],
       order: [['createdAt', 'DESC']],
     });
-    res.json(invoices);
+    res.json(invoices.map(attachUpiPaymentUri));
   } catch (err) { next(err); }
 };
 
@@ -34,7 +56,7 @@ exports.get = async (req, res, next) => {
       include: [{ model: Patient }, { model: InvoiceItem }, { model: Appointment }],
     });
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
-    res.json(invoice);
+    res.json(attachUpiPaymentUri(invoice));
   } catch (err) { next(err); }
 };
 
@@ -79,7 +101,7 @@ exports.create = async (req, res, next) => {
     const full = await Invoice.findByPk(invoice.id, {
       include: [{ model: Patient, attributes: ['id', 'name', 'mrn'] }, { model: InvoiceItem }],
     });
-    res.status(201).json(full);
+    res.status(201).json(attachUpiPaymentUri(full));
   } catch (err) {
     await t.rollback();
     next(err);
@@ -106,7 +128,7 @@ exports.recordPayment = async (req, res, next) => {
       action: 'update', entityType: 'Invoice', entityId: invoice.id,
       summary: `Recorded payment of $${Number(amount).toFixed(2)} on ${invoice.invoiceNumber}`,
     });
-    res.json(invoice);
+    res.json(attachUpiPaymentUri(invoice));
   } catch (err) { next(err); }
 };
 

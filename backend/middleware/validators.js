@@ -160,6 +160,28 @@ const dashboardValidators = {
   ],
 };
 
+// Extra-strict validation for the one endpoint in the app with no auth at
+// all (public, unauthenticated appointment booking) — see
+// controllers/publicController.js and routes/publicRoutes.js.
+const PHONE_RE = /^[0-9+\-\s()]{7,20}$/;
+
+const publicValidators = {
+  book: [
+    body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 120 }).withMessage('Name is too long'),
+    body('phone').trim().notEmpty().withMessage('Phone number is required').matches(PHONE_RE).withMessage('Enter a valid phone number'),
+    body('email').optional({ values: 'falsy' }).trim().isEmail().withMessage('Invalid email address').isLength({ max: 254 }),
+    body('doctorId').isInt().withMessage('A valid doctorId is required'),
+    body('date').isISO8601().withMessage('A valid date (YYYY-MM-DD) is required')
+      .custom((value) => {
+        const today = new Date().toISOString().slice(0, 10);
+        if (String(value).slice(0, 10) < today) throw new Error('Date cannot be in the past');
+        return true;
+      }),
+    body('time').matches(/^\d{2}:\d{2}$/).withMessage('Time must be in HH:MM format'),
+    body('reason').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).withMessage('Reason is too long'),
+  ],
+};
+
 module.exports = {
   authValidators,
   userValidators,
@@ -173,4 +195,5 @@ module.exports = {
   shiftValidators,
   medicalRecordValidators,
   dashboardValidators,
+  publicValidators,
 };

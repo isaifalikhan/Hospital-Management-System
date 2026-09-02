@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { HeartPulse, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -83,6 +83,9 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Just a patient? <Link to="/book" className="font-medium text-indigo-600 hover:underline">Book an appointment without an account</Link>
+          </p>
         </div>
 
         <div className="card mt-4 p-4">

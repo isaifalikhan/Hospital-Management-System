@@ -61,6 +61,20 @@ on the frontend, with JWT authentication and role-based access control.
   department, doctor utilization (completed appointments vs. each doctor's configured
   available slots), and ward/bed occupancy, all over a selectable date range (defaults to
   the last 30 days). Export the same report to CSV.
+- **Public Online Booking** — A no-login booking page (`/book`, linked from the login
+  screen) lets a walk-in web visitor pick a doctor and a genuinely open slot (reusing the
+  same availability logic as the staff scheduler) and submit their own name, phone,
+  optional email, and reason. Find-or-creates the patient by phone and books the
+  appointment directly. It's the one endpoint in the app with no login required, so it's
+  strictly rate-limited and every field is validated defensively.
+- **Appointment Reminder Emails** — A background scheduler checks every ~15 minutes for
+  scheduled appointments 24-26 hours out and emails the patient a reminder (via
+  `backend/utils/emailService.js`, using `nodemailer`). With no SMTP configured, reminders
+  are simply logged to the console instead of sent, so the feature works out of the box.
+- **UPI QR Payment Nudge** — When the hospital configures `UPI_ID`, the invoice detail/print
+  view renders a scan-to-pay UPI QR code for the outstanding balance. Front desk still
+  records the actual payment manually — this is a convenience nudge, not a live payment
+  gateway integration.
 
 ## Project Structure
 
@@ -193,6 +207,8 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/dashboard/owner-insights?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (admin only;
   both params optional, defaults to the last 30 days)
 - `GET /api/reports/owner-insights.csv?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (admin only)
+- `GET /api/public/doctors`, `GET /api/public/doctors/:id/available-slots?date=YYYY-MM-DD`,
+  `POST /api/public/appointments` — no auth required (public booking; rate-limited)
 
 ## Changelog
 
