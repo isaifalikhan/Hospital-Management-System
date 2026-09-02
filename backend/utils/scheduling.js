@@ -1,10 +1,8 @@
-// Shared slot-availability math. Mirrors the logic in
-// controllers/doctorController.js#availableSlots (kept separate rather than
-// imported from there, since that function is wired directly to an
-// Express req/res pair for the staff-facing route) so the patient portal's
-// self-service booking flow can compute the same open 30-minute slots
-// without depending on another workstream's public-booking endpoint, which
-// may not exist in every checkout of this repo.
+// Single source of truth for slot-availability math: doctor weekly
+// availability (availableDays/availableTime) -> 30-minute slot boundaries.
+// Every caller that needs this (staff booking, public booking, patient
+// portal booking, owner-insights utilization, and the availableDays
+// validator) imports it from here rather than reimplementing it.
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SLOT_MINUTES = 30;
@@ -34,7 +32,11 @@ function computeAvailableSlots(doctor, date, bookedTimes = []) {
   const dayName = DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
   const availableDays = doctor.availableDays.split(',').map((d) => d.trim());
   if (!availableDays.includes(dayName)) {
-    return { slots: [], reason: `Dr. ${doctor.name} is not available on ${dayName}s.` };
+    // Seeded/entered doctor names already include a "Dr." prefix (see
+    // backend/utils/seed.js) — strip it before re-adding one, matching the
+    // same convention the frontend already uses for doctor display names.
+    const displayName = doctor.name.replace(/^Dr\.?\s*/, '');
+    return { slots: [], reason: `Dr. ${displayName} is not available on ${dayName}s.` };
   }
 
   const [startStr, endStr] = doctor.availableTime.split('-').map((t) => t.trim());
@@ -50,4 +52,4 @@ function computeAvailableSlots(doctor, date, bookedTimes = []) {
   return { slots };
 }
 
-module.exports = { computeAvailableSlots, DAY_NAMES, SLOT_MINUTES };
+module.exports = { computeAvailableSlots, timeToMinutes, minutesToTime, DAY_NAMES, SLOT_MINUTES };

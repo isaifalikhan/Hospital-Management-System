@@ -71,6 +71,9 @@ on the frontend, with JWT authentication and role-based access control.
   scheduled appointments 24-26 hours out and emails the patient a reminder (via
   `backend/utils/emailService.js`, using `nodemailer`). With no SMTP configured, reminders
   are simply logged to the console instead of sent, so the feature works out of the box.
+  On Vercel, the `setInterval` scheduler can't survive between stateless function
+  invocations — set `CRON_SECRET` and Vercel's own cron (already configured in
+  `vercel.json`) will hit `GET /api/cron/reminders` on the same schedule instead.
 - **UPI QR Payment Nudge** — When the hospital configures `UPI_ID`, the invoice detail/print
   view renders a scan-to-pay UPI QR code for the outstanding balance. Front desk still
   records the actual payment manually — this is a convenience nudge, not a live payment
@@ -194,6 +197,11 @@ use:
    `dist/` folder from a static host or from the Express server itself.
 4. Add HTTPS, rate limiting, and audit logging appropriate for handling real patient data
    (HIPAA or your local equivalent regulations may apply).
+5. On Vercel specifically, set `CRON_SECRET` so `GET /api/cron/reminders` (already scheduled
+   in `vercel.json`) can run appointment reminders — see Appointment Reminder Emails above.
+   Vercel's free/Hobby tier historically limits how often a cron job actually fires (daily,
+   not every 15 minutes); check your plan's current cron limits and adjust the schedule in
+   `vercel.json` if needed.
 
 ## API Overview
 
@@ -226,6 +234,9 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/reports/owner-insights.csv?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (admin only)
 - `GET /api/public/doctors`, `GET /api/public/doctors/:id/available-slots?date=YYYY-MM-DD`,
   `POST /api/public/appointments` — no auth required (public booking; rate-limited)
+- `GET /api/cron/reminders` — no JWT; requires `Authorization: Bearer <CRON_SECRET>` instead.
+  Runs the same reminder logic as the local scheduler; meant to be called by Vercel Cron, not
+  the frontend. Returns 501 if `CRON_SECRET` isn't configured.
 - `PUT /api/patients/:id/portal-pin` (admin/receptionist — sets a patient's portal login PIN)
 - `POST /api/ai/summary` (admin/doctor/receptionist — drafts a summary from structured
   fields; see AI-Assisted Note Drafting above)

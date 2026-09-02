@@ -93,7 +93,20 @@ exports.setPortalPin = async (req, res, next) => {
       action: 'update', entityType: 'Patient', entityId: patient.id,
       summary: `Set portal PIN for patient ${patient.name}`,
     });
-    res.json({ message: 'Portal PIN set successfully' });
+    // Patient.phone has no uniqueness constraint, so portal login has to try
+    // every patient sharing a phone number until one's PIN matches — that
+    // works correctly as long as each shares a distinct PIN, but staff
+    // should know the number isn't unique so they can pick distinguishable
+    // PINs (or a different phone) for family members sharing a line.
+    const sharedPhoneCount = patient.phone
+      ? await Patient.count({ where: { phone: patient.phone, id: { [Op.ne]: patient.id } } })
+      : 0;
+    res.json({
+      message: 'Portal PIN set successfully',
+      ...(sharedPhoneCount > 0 && {
+        warning: `${sharedPhoneCount} other patient(s) share this phone number. Portal login works as long as their PINs are different — consider using distinguishable PINs.`,
+      }),
+    });
   } catch (err) { next(err); }
 };
 

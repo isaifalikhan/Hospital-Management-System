@@ -234,9 +234,9 @@ export default function PatientDetail() {
     setSavingPin(true);
     setPinMessage('');
     try {
-      await patientsApi.setPortalPin(id, { pin, portalEmail: portalEmail || undefined });
+      const res = await patientsApi.setPortalPin(id, { pin, portalEmail: portalEmail || undefined });
       setPin('');
-      setPinMessage('Portal PIN set. Share it with the patient along with the phone number on file.');
+      setPinMessage(res.data.warning || 'Portal PIN set. Share it with the patient along with the phone number on file.');
     } catch (err) {
       setPinMessage(err.response?.data?.message || 'Failed to set portal PIN');
     } finally {

@@ -47,11 +47,16 @@ async function sendDueReminders() {
 
     for (const appt of due) {
       const patientEmail = appt.Patient?.email;
-      const doctorName = appt.Doctor?.name || 'your doctor';
+      // Seeded/entered doctor names already include a "Dr." prefix, so don't
+      // add a second one — and skip it entirely for the "no doctor on this
+      // appointment" fallback so it doesn't read as "Dr. your doctor".
+      const doctorLabel = appt.Doctor?.name
+        ? `Dr. ${appt.Doctor.name.replace(/^Dr\.?\s*/, '')}`
+        : 'your doctor';
       const subject = `Reminder: appointment on ${appt.date} at ${appt.time}`;
       const text =
         `Hi ${appt.Patient?.name || 'there'},\n\n` +
-        `This is a reminder of your upcoming appointment with Dr. ${doctorName} on ${appt.date} at ${appt.time}.\n\n` +
+        `This is a reminder of your upcoming appointment with ${doctorLabel} on ${appt.date} at ${appt.time}.\n\n` +
         `If you need to reschedule or cancel, please contact the hospital.\n\n` +
         `— MediCare HMS`;
 
@@ -81,7 +86,10 @@ let intervalHandle = null;
 // this only works while the process stays alive (the local/LAN "single
 // process" deployment); it's a no-op in between invocations of a stateless
 // serverless deployment (e.g. Vercel functions), since nothing keeps a
-// setInterval alive across separate function invocations there.
+// setInterval alive across separate function invocations there. On Vercel,
+// set CRON_SECRET and use the vercel.json "crons" entry (routes/cronRoutes.js)
+// instead — it calls sendDueReminders() directly on a schedule Vercel itself
+// drives, sidestepping the need for a long-lived process.
 function startReminderScheduler() {
   if (intervalHandle) return; // idempotent — never stack multiple intervals
   sendDueReminders(); // also run once on boot so a restart doesn't wait up to 15 min

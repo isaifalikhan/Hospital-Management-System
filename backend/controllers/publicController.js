@@ -80,7 +80,7 @@ exports.book = async (req, res, next) => {
       action: 'create',
       entityType: 'Appointment',
       entityId: appt.id,
-      summary: `Public online booking: ${patient.name} (${patient.phone}) with Dr. ${doctor.name} on ${date} ${time}`,
+      summary: `Public online booking: ${patient.name} (${patient.phone}) with Dr. ${doctor.name.replace(/^Dr\.?\s*/, '')} on ${date} ${time}`,
     });
 
     res.status(201).json({

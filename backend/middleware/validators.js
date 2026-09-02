@@ -1,4 +1,5 @@
 const { body, query, param } = require('express-validator');
+const { DAY_NAMES: WEEKDAY_NAMES } = require('../utils/scheduling');
 
 const authValidators = {
   login: [
@@ -45,7 +46,6 @@ const patientValidators = {
 };
 
 const TIME_RANGE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
-const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function validAvailableDays(value) {
   const days = String(value).split(',').map((d) => d.trim());

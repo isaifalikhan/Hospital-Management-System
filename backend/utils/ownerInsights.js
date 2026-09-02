@@ -1,13 +1,6 @@
 const { Op } = require('sequelize');
 const { Invoice, Appointment, Doctor, Department, Admission } = require('../models');
-
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const SLOT_MINUTES = 30;
-
-function timeToMinutes(str) {
-  const [h, m] = str.split(':').map(Number);
-  return h * 60 + m;
-}
+const { DAY_NAMES, SLOT_MINUTES, timeToMinutes } = require('./scheduling');
 
 function isoDate(d) {
   return d.toISOString().slice(0, 10);

@@ -28,18 +28,20 @@ exports.login = async (req, res, next) => {
     if (!phone || !pin) {
       return res.status(400).json({ message: 'Phone and PIN are required' });
     }
-    // NOTE (scope cut): Patient.phone has no uniqueness constraint in this
-    // schema (family members may share a landline). Portal login therefore
-    // matches the first patient row with that phone number who also has a
-    // PIN set. For a real deployment, phone numbers used for portal login
-    // should be kept distinct per patient, or login should be extended to
-    // also take the MRN.
-    const patient = await Patient.findOne({ where: { phone: phone.trim() } });
-    if (!patient || !patient.portalPin) {
-      return res.status(401).json({ message: 'Invalid phone number or PIN, or portal access has not been enabled for this patient yet.' });
+    // Patient.phone has no uniqueness constraint in this schema (family
+    // members may share a landline), so more than one patient row can match.
+    // Rather than picking an arbitrary one (which would silently lock out
+    // every match but the first), try every portal-enabled patient sharing
+    // this phone number and log in as whichever one's PIN actually matches.
+    const candidates = await Patient.findAll({ where: { phone: phone.trim() } });
+    let patient = null;
+    for (const candidate of candidates) {
+      if (candidate.portalPin && await bcrypt.compare(pin, candidate.portalPin)) {
+        patient = candidate;
+        break;
+      }
     }
-    const match = await bcrypt.compare(pin, patient.portalPin);
-    if (!match) {
+    if (!patient) {
       return res.status(401).json({ message: 'Invalid phone number or PIN, or portal access has not been enabled for this patient yet.' });
     }
     const token = signPatientToken(patient);

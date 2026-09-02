@@ -33,6 +33,7 @@ const publicRoutes = require('./routes/publicRoutes');
 const { startReminderScheduler } = require('./utils/reminderScheduler');
 const patientPortalRoutes = require('./routes/patientPortalRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const cronRoutes = require('./routes/cronRoutes');
 
 const app = express();
 
@@ -100,6 +101,7 @@ app.use('/api/admin', backupRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/patient-portal', patientPortalRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/cron', cronRoutes);
 
 // Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
 // so the whole app can run as one process on one port for LAN/offline use —
