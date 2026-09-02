@@ -1,5 +1,5 @@
 {
-  "buildCommand": "corepack enable && corepack prepare pnpm@11.5.0 --activate && pnpm --version && pnpm --dir backend install --prod && pnpm --dir frontend install && pnpm --dir frontend run build",
+  "buildCommand": "corepack enable && corepack prepare pnpm@11.5.0 --activate && corepack pnpm --version && corepack pnpm --dir backend install --prod && corepack pnpm --dir frontend install && corepack pnpm --dir frontend run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
