@@ -93,8 +93,15 @@ exports.update = async (req, res, next) => {
       }
     }
 
+    const updates = { ...req.body };
+    // Only mint a new room the first time video is turned on for this
+    // appointment; once a link exists we keep it so it stays shareable.
+    if (updates.isVideoConsult && !appt.videoLink) {
+      updates.videoLink = buildVideoConsultLink();
+    }
+
     try {
-      await appt.update(req.body);
+      await appt.update(updates);
     } catch (err) {
       if (err.name === 'SequelizeUniqueConstraintError') {
         return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });

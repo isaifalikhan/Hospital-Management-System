@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BedDouble, Filter } from 'lucide-react';
-import { admissionsApi } from '../api';
+import { BedDouble, Filter, Sparkles } from 'lucide-react';
+import { admissionsApi, aiApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
 
 export default function Admissions() {
   const [admissions, setAdmissions] = useState([]);
   const [statusFilter, setStatusFilter] = useState('admitted');
   const [loading, setLoading] = useState(true);
+
+  const [dischargeTarget, setDischargeTarget] = useState(null);
+  const [dischargeNotes, setDischargeNotes] = useState('');
+  const [discharging, setDischarging] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -19,14 +25,48 @@ export default function Admissions() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter]);
 
-  async function handleDischarge(admission) {
-    const dischargeNotes = prompt(`Discharge notes for ${admission.Patient?.name} (optional):`);
-    if (dischargeNotes === null) return;
+  function openDischarge(admission) {
+    setDischargeTarget(admission);
+    setDischargeNotes(admission.dischargeNotes || '');
+  }
+
+  // Drafts a discharge summary from this admission's own ward/reason/dates —
+  // AI_API_KEY-backed if configured, otherwise a built-in template (see
+  // backend/utils/aiSummaryService.js). Only pre-fills the textarea below;
+  // nothing is saved until "Discharge Patient" is clicked.
+  async function handleGenerateSummary() {
+    if (!dischargeTarget) return;
+    setGeneratingSummary(true);
     try {
-      await admissionsApi.discharge(admission.id, { dischargeNotes });
+      const res = await aiApi.generateSummary({
+        title: 'Discharge Summary',
+        patientName: dischargeTarget.Patient?.name,
+        fields: {
+          Ward: `${dischargeTarget.ward} (bed ${dischargeTarget.bedNumber})`,
+          'Reason for admission': dischargeTarget.reason,
+          'Admission date': dischargeTarget.admissionDate,
+          'Attending doctor': dischargeTarget.Doctor?.name,
+        },
+      });
+      setDischargeNotes(res.data.summary);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to generate summary');
+    } finally {
+      setGeneratingSummary(false);
+    }
+  }
+
+  async function handleDischarge(e) {
+    e.preventDefault();
+    setDischarging(true);
+    try {
+      await admissionsApi.discharge(dischargeTarget.id, { dischargeNotes });
+      setDischargeTarget(null);
       await load();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to discharge patient');
+    } finally {
+      setDischarging(false);
     }
   }
 
@@ -84,7 +124,7 @@ export default function Admissions() {
                   <td className="px-4 py-3"><StatusBadge status={a.status} /></td>
                   <td className="px-4 py-3 text-right">
                     {a.status === 'admitted' && (
-                      <button onClick={() => handleDischarge(a)} className="text-xs text-rose-600 hover:underline">Discharge</button>
+                      <button onClick={() => openDischarge(a)} className="text-xs text-rose-600 hover:underline">Discharge</button>
                     )}
                   </td>
                 </tr>
@@ -93,6 +133,39 @@ export default function Admissions() {
           </tbody>
         </table>
       </div>
+
+      <Modal open={!!dischargeTarget} onClose={() => setDischargeTarget(null)} title={`Discharge ${dischargeTarget?.Patient?.name || 'Patient'}`}>
+        <form onSubmit={handleDischarge} className="space-y-4">
+          <p className="text-sm text-slate-500">
+            {dischargeTarget?.ward} · bed {dischargeTarget?.bedNumber} · admitted {dischargeTarget?.admissionDate}
+          </p>
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label mb-0">Discharge Notes</label>
+              <button
+                type="button"
+                onClick={handleGenerateSummary}
+                disabled={generatingSummary}
+                className="flex items-center gap-1 text-xs text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                title="Draft a discharge summary from this admission's ward/reason/dates — review before saving"
+              >
+                <Sparkles size={13} /> {generatingSummary ? 'Generating...' : 'Generate Summary'}
+              </button>
+            </div>
+            <textarea
+              className="input"
+              rows={5}
+              value={dischargeNotes}
+              onChange={(e) => setDischargeNotes(e.target.value)}
+              placeholder="Add or generate discharge notes, then edit as needed"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="btn-secondary" onClick={() => setDischargeTarget(null)}>Cancel</button>
+            <button type="submit" className="btn-danger" disabled={discharging}>{discharging ? 'Discharging...' : 'Discharge Patient'}</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

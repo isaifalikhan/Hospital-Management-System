@@ -1,9 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { PatientPortalProvider } from './context/PatientPortalContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import PatientPortalGuard from './components/PatientPortalGuard';
 import Layout from './components/Layout';
 
 import Login from './pages/Login';
+import PatientPortalLogin from './pages/PatientPortalLogin';
+import PatientPortal from './pages/PatientPortal';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import PatientDetail from './pages/PatientDetail';
@@ -21,8 +25,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <PatientPortalProvider>
+          <Routes>
           <Route path="/login" element={<Login />} />
+
+          {/* Patient self-service portal — entirely separate auth guard from
+              the staff routes below (see PatientPortalContext / PatientPortalGuard). */}
+          <Route path="/portal/login" element={<PatientPortalLogin />} />
+          <Route
+            path="/portal"
+            element={
+              <PatientPortalGuard>
+                <PatientPortal />
+              </PatientPortalGuard>
+            }
+          />
 
           <Route
             element={
@@ -124,7 +141,8 @@ export default function App() {
               }
             />
           </Route>
-        </Routes>
+          </Routes>
+        </PatientPortalProvider>
       </AuthProvider>
     </BrowserRouter>
   );
