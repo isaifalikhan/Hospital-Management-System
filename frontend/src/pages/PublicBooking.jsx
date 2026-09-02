@@ -101,7 +101,7 @@ export default function PublicBooking() {
             </div>
             <h2 className="text-lg font-semibold text-slate-900">You're booked!</h2>
             <p className="mt-1 text-sm text-slate-500">
-              {confirmation.patientName}, your appointment with Dr. {confirmation.doctorName} is confirmed.
+              {confirmation.patientName}, your appointment with {confirmation.doctorName} is confirmed.
             </p>
             <div className="mx-auto mt-4 flex max-w-xs items-center justify-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
               <CalendarClock size={16} className="text-indigo-600" />
