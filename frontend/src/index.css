@@ -56,3 +56,22 @@ body {
     overflow: visible;
   }
 }
+
+/* Same technique as #invoice-print-area above, generalized as a reusable
+   class for any other "print just this modal's content" view — used by the
+   medical record and discharge summary print views (see PatientDetail.jsx
+   and Admissions.jsx). */
+@media print {
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    padding: 1.5rem;
+    background: white;
+    overflow: visible;
+  }
+}
