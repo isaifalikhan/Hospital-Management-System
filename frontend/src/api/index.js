@@ -110,3 +110,11 @@ export const usersApi = {
   update: (id, data) => client.put(`/users/${id}`, data),
   remove: (id) => client.delete(`/users/${id}`),
 };
+
+// Public, unauthenticated booking flow (no token on these calls) — see
+// frontend/src/pages/PublicBooking.jsx and backend/routes/publicRoutes.js.
+export const publicApi = {
+  listDoctors: () => client.get('/public/doctors'),
+  availableSlots: (doctorId, date) => client.get(`/public/doctors/${doctorId}/available-slots`, { params: { date } }),
+  book: (data) => client.post('/public/appointments', data),
+};

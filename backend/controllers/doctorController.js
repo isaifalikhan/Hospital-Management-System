@@ -77,38 +77,49 @@ exports.remove = async (req, res, next) => {
 // Computes open 30-minute appointment slots for a doctor on a given date,
 // based on their weekly availability window minus appointments already on
 // the books (any non-cancelled appointment blocks its slot).
+//
+// Extracted as a plain (non-Express) function so it can be reused outside
+// this handler — the public booking flow (controllers/publicController.js)
+// calls it to re-validate a slot server-side before creating an
+// unauthenticated appointment, rather than trusting whatever the client
+// last saw.
+async function computeAvailableSlots(doctor, date) {
+  if (!doctor.availableDays || !doctor.availableTime) {
+    return { date, slots: [], reason: 'This doctor has no configured availability.' };
+  }
+
+  const dayName = DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
+  const availableDays = doctor.availableDays.split(',').map((d) => d.trim());
+  if (!availableDays.includes(dayName)) {
+    return { date, slots: [], reason: `Dr. ${doctor.name} is not available on ${dayName}s.` };
+  }
+
+  const [startStr, endStr] = doctor.availableTime.split('-').map((t) => t.trim());
+  const startMin = timeToMinutes(startStr);
+  const endMin = timeToMinutes(endStr);
+
+  const booked = await Appointment.findAll({
+    where: { doctorId: doctor.id, date, status: { [Op.ne]: 'cancelled' } },
+    attributes: ['time'],
+  });
+  const bookedTimes = new Set(booked.map((a) => a.time));
+
+  const slots = [];
+  for (let m = startMin; m + SLOT_MINUTES <= endMin; m += SLOT_MINUTES) {
+    const slotTime = minutesToTime(m);
+    if (!bookedTimes.has(slotTime)) slots.push(slotTime);
+  }
+
+  return { date, slots };
+}
+exports.computeAvailableSlots = computeAvailableSlots;
+
 exports.availableSlots = async (req, res, next) => {
   try {
     const { date } = req.query;
     const doctor = await Doctor.findByPk(req.params.id);
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-
-    if (!doctor.availableDays || !doctor.availableTime) {
-      return res.json({ date, slots: [], reason: 'This doctor has no configured availability.' });
-    }
-
-    const dayName = DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
-    const availableDays = doctor.availableDays.split(',').map((d) => d.trim());
-    if (!availableDays.includes(dayName)) {
-      return res.json({ date, slots: [], reason: `Dr. ${doctor.name} is not available on ${dayName}s.` });
-    }
-
-    const [startStr, endStr] = doctor.availableTime.split('-').map((t) => t.trim());
-    const startMin = timeToMinutes(startStr);
-    const endMin = timeToMinutes(endStr);
-
-    const booked = await Appointment.findAll({
-      where: { doctorId: doctor.id, date, status: { [Op.ne]: 'cancelled' } },
-      attributes: ['time'],
-    });
-    const bookedTimes = new Set(booked.map((a) => a.time));
-
-    const slots = [];
-    for (let m = startMin; m + SLOT_MINUTES <= endMin; m += SLOT_MINUTES) {
-      const slotTime = minutesToTime(m);
-      if (!bookedTimes.has(slotTime)) slots.push(slotTime);
-    }
-
-    res.json({ date, slots });
+    const result = await computeAvailableSlots(doctor, date);
+    res.json(result);
   } catch (err) { next(err); }
 };

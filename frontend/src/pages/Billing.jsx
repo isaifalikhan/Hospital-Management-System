@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import { Plus, Trash2, DollarSign, Eye, Download, Printer } from 'lucide-react';
 import { invoicesApi, patientsApi, reportsApi } from '../api';
 import PageHeader from '../components/PageHeader';
@@ -24,6 +25,22 @@ export default function Billing() {
   const [viewInvoice, setViewInvoice] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [upiQrDataUrl, setUpiQrDataUrl] = useState('');
+
+  // upiPaymentUri is set by the backend only when UPI_ID is configured and
+  // the invoice has a balance due (see invoiceController.attachUpiPaymentUri).
+  // Rendered client-side so no image round-trips the server.
+  useEffect(() => {
+    if (!viewInvoice?.upiPaymentUri) {
+      setUpiQrDataUrl('');
+      return;
+    }
+    let cancelled = false;
+    QRCode.toDataURL(viewInvoice.upiPaymentUri, { width: 160, margin: 1 })
+      .then((url) => { if (!cancelled) setUpiQrDataUrl(url); })
+      .catch(() => { if (!cancelled) setUpiQrDataUrl(''); });
+    return () => { cancelled = true; };
+  }, [viewInvoice?.upiPaymentUri]);
 
   async function load() {
     setLoading(true);
@@ -284,6 +301,23 @@ export default function Billing() {
               <div className="flex justify-between text-emerald-600"><span>Paid</span><span>${Number(viewInvoice.amountPaid).toFixed(2)}</span></div>
               <div className="flex justify-between font-medium"><span>Balance</span><span>${(Number(viewInvoice.total) - Number(viewInvoice.amountPaid)).toFixed(2)}</span></div>
             </div>
+
+            {viewInvoice.upiPaymentUri && (
+              <div className="mb-4 flex items-center gap-4 rounded-lg border border-slate-200 p-3 sm:w-1/2 sm:ml-auto">
+                {upiQrDataUrl ? (
+                  <img src={upiQrDataUrl} alt="UPI payment QR code" className="h-24 w-24 shrink-0" />
+                ) : (
+                  <div className="h-24 w-24 shrink-0 animate-pulse rounded bg-slate-100" />
+                )}
+                <div className="text-sm">
+                  <p className="font-medium text-slate-900">Scan to pay via UPI</p>
+                  <p className="text-slate-500">
+                    Balance due: ${(Number(viewInvoice.total) - Number(viewInvoice.amountPaid)).toFixed(2)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">Front desk will confirm and record the payment.</p>
+                </div>
+              </div>
+            )}
 
             {viewInvoice.status !== 'paid' && (
               <form onSubmit={handlePayment} className="flex items-end gap-2 border-t border-slate-200 pt-4 print:hidden">

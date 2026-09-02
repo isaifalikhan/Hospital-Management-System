@@ -11,6 +11,10 @@ const Appointment = sequelize.define('Appointment', {
     defaultValue: 'scheduled',
   },
   notes: { type: DataTypes.TEXT, allowNull: true },
+  // Set once a 24-26h-ahead reminder email has been sent for this
+  // appointment (see backend/utils/reminderScheduler.js), so the scheduler
+  // never emails the same patient twice for the same visit.
+  reminderSentAt: { type: DataTypes.DATE, allowNull: true },
 }, {
   tableName: 'appointments',
   timestamps: true,

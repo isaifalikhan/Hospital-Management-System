@@ -16,6 +16,7 @@ import StaffUsers from './pages/StaffUsers';
 import LabOrders from './pages/LabOrders';
 import Admissions from './pages/Admissions';
 import AuditLog from './pages/AuditLog';
+import PublicBooking from './pages/PublicBooking';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/book" element={<PublicBooking />} />
 
           <Route
             element={

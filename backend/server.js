@@ -29,6 +29,8 @@ const reportRoutes = require('./routes/reportRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const shiftRoutes = require('./routes/shiftRoutes');
 const backupRoutes = require('./routes/backupRoutes');
+const publicRoutes = require('./routes/publicRoutes');
+const { startReminderScheduler } = require('./utils/reminderScheduler');
 
 const app = express();
 
@@ -50,8 +52,19 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: 'Too many login attempts. Please try again in a few minutes.' },
 });
+// Extra-strict limiter for the public, unauthenticated booking endpoint —
+// this is the only write endpoint in the app with no JWT check at all, so it
+// gets both this and the general limiter above stacked on top of it.
+const publicBookingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many booking attempts. Please try again later.' },
+});
 app.use('/api', generalLimiter);
 app.use('/api/auth/login', loginLimiter);
+app.use('/api/public/appointments', publicBookingLimiter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
@@ -72,6 +85,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/admin', backupRoutes);
+app.use('/api/public', publicRoutes);
 
 // Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
 // so the whole app can run as one process on one port for LAN/offline use —
@@ -106,6 +120,7 @@ async function start() {
     );
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);
+      startReminderScheduler();
     });
   } catch (err) {
     console.error('Failed to start server:', err);
