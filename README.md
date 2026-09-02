@@ -42,6 +42,23 @@ on the frontend, with JWT authentication and role-based access control.
 - **Production Hardening** — `helmet` security headers, general + login-specific rate
   limiting, request validation on every write endpoint (`express-validator`), and
   fail-fast environment validation on startup.
+- **Patient Self-Service Portal** — A separate, patient-facing login (phone number + a
+  short PIN a receptionist/admin sets from the patient's profile) at `/portal/login`, kept
+  entirely independent of staff auth (its own JWT role, its own browser session/storage).
+  From `/portal` a patient can view their own upcoming/past appointments, book or cancel an
+  appointment against a doctor's live availability, see patient-appropriate medical record
+  summaries (diagnosis/treatment only — full clinical detail stays staff-only), and view
+  their invoices. Every endpoint is scoped strictly to the logged-in patient's own records.
+- **AI-Assisted Note Drafting** — A "Generate Summary" button on discharge notes
+  (Admissions) and medical record notes (patient chart) drafts a paragraph from the
+  diagnosis/treatment/vitals or ward/admission details already entered, which the
+  doctor/receptionist can edit before saving — nothing is ever auto-saved. Works out of the
+  box with a built-in template (no API key required); set `AI_API_KEY` to have an LLM draft
+  it instead.
+- **Telemedicine / Video Consultations** — Mark any appointment (staff-booked or
+  patient-booked) as a video consult to generate a free Jitsi Meet link automatically (no
+  account or API key needed); a "Join Video Call" button appears wherever that appointment
+  is shown, including the patient portal.
 
 ## Project Structure
 
@@ -161,8 +178,44 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/dashboard/summary`, `GET /api/dashboard/analytics`
 - `GET /api/audit-logs` (admin only)
 - `GET /api/reports/patients.csv`, `/api/reports/appointments.csv`, `/api/reports/invoices.csv`
+- `PUT /api/patients/:id/portal-pin` (admin/receptionist — sets a patient's portal login PIN)
+- `POST /api/ai/summary` (admin/doctor/receptionist — drafts a summary from structured
+  fields; see AI-Assisted Note Drafting above)
+
+### Patient portal (separate auth — phone + PIN, not a staff token)
+
+All prefixed with `/api/patient-portal` and, except `/login`, require a
+`Authorization: Bearer <token>` header from `POST /api/patient-portal/login` (a token with
+staff credentials will not work here, and vice versa). Every response is scoped to the
+logged-in patient's own data.
+
+- `POST /api/patient-portal/login` — body `{ phone, pin }`
+- `GET /api/patient-portal/me`
+- `GET /api/patient-portal/doctors`, `GET /api/patient-portal/doctors/:doctorId/available-slots?date=YYYY-MM-DD`
+- `GET /api/patient-portal/appointments`, `POST /api/patient-portal/appointments`,
+  `POST /api/patient-portal/appointments/:id/cancel`
+- `GET /api/patient-portal/medical-records` (diagnosis/treatment summaries only)
+- `GET /api/patient-portal/invoices`
 
 ## Changelog
+
+### v3 — Patient portal, AI-assisted notes, telemedicine
+
+- A patient self-service portal (`/portal/login`, `/portal`) with its own phone+PIN login
+  and JWT role (`patient`), fully separate from staff auth. Patients can view their own
+  appointments, book/cancel against live doctor availability, see diagnosis/treatment-only
+  medical record summaries, and view their invoices — every endpoint scoped to the logged-in
+  patient's own id.
+- `Patient.portalPin` (bcrypt-hashed, like staff passwords) and `Patient.portalEmail`,
+  settable by an admin/receptionist from the patient profile screen.
+- AI-assisted drafting for discharge notes and medical record notes: a "Generate Summary"
+  button pre-fills an editable textarea from the diagnosis/treatment/vitals or admission
+  details already on the form. Uses a built-in deterministic template by default (zero
+  config); set `AI_API_KEY` to have it call an LLM instead. Never auto-saves — a human
+  always reviews before submitting.
+- `Appointment.isVideoConsult` + `videoLink`: marking an appointment (staff- or
+  patient-booked) as a video consult generates a free Jitsi Meet room automatically; a
+  "Join Video Call" button appears on the appointment wherever it's shown.
 
 ### v2 — Clinical depth, scheduling polish, analytics & hardening
 

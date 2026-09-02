@@ -23,6 +23,7 @@ export default function PatientDetail() {
   const canOrderLab = ['admin', 'doctor'].includes(user?.role);
   const canAdmit = ['admin', 'doctor', 'receptionist'].includes(user?.role);
   const canDispense = ['admin', 'pharmacist'].includes(user?.role);
+  const canManagePortalAccess = ['admin', 'receptionist'].includes(user?.role);
 
   const [patient, setPatient] = useState(null);
   const [error, setError] = useState('');
@@ -278,7 +279,7 @@ export default function PatientDetail() {
           </dl>
         </div>
 
-        {canEdit && (
+        {canManagePortalAccess && (
           <div className="card p-5">
             <h2 className="mb-1 text-sm font-semibold text-slate-900">Patient Portal Access</h2>
             <p className="mb-3 text-xs text-slate-500">
