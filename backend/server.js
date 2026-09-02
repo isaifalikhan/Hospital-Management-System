@@ -28,6 +28,7 @@ const auditLogRoutes = require('./routes/auditLogRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const shiftRoutes = require('./routes/shiftRoutes');
+const backupRoutes = require('./routes/backupRoutes');
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/shifts', shiftRoutes);
+app.use('/api/admin', backupRoutes);
 
 // Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
 // so the whole app can run as one process on one port for LAN/offline use —

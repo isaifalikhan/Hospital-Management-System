@@ -10,7 +10,7 @@ router.use(authenticate, authorize('admin', 'doctor', 'receptionist'));
 router.get('/', admissionController.list);
 router.post('/', admissionValidators.create, validate, admissionController.create);
 router.put('/:id', admissionController.update);
-router.post('/:id/discharge', admissionController.discharge);
+router.post('/:id/discharge', admissionValidators.discharge, validate, admissionController.discharge);
 router.delete('/:id', authorize('admin'), admissionController.remove);
 
 module.exports = router;

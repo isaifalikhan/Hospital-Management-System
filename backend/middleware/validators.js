@@ -114,6 +114,11 @@ const admissionValidators = {
     body('ward').trim().notEmpty().withMessage('Ward is required'),
     body('bedNumber').trim().notEmpty().withMessage('Bed number is required'),
   ],
+  discharge: [
+    body('dischargeNotes').optional({ values: 'falsy' }).isString().withMessage('dischargeNotes must be text'),
+    // Base64 PNG data URL produced by the signature pad canvas (see SignaturePad.jsx).
+    body('signatureData').optional({ values: 'falsy' }).isString().withMessage('signatureData must be a base64 PNG string'),
+  ],
 };
 
 const labOrderValidators = {
@@ -140,6 +145,14 @@ const shiftValidators = {
   ],
 };
 
+const medicalRecordValidators = {
+  create: [
+    body('patientId').isInt().withMessage('A valid patientId is required'),
+    // Base64 PNG data URL produced by the signature pad canvas (see SignaturePad.jsx).
+    body('signatureData').optional({ values: 'falsy' }).isString().withMessage('signatureData must be a base64 PNG string'),
+  ],
+};
+
 module.exports = {
   authValidators,
   userValidators,
@@ -151,4 +164,5 @@ module.exports = {
   admissionValidators,
   labOrderValidators,
   shiftValidators,
+  medicalRecordValidators,
 };

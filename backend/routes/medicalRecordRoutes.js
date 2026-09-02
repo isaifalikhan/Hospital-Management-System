@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const medicalRecordController = require('../controllers/medicalRecordController');
 const { authenticate, authorize } = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const { medicalRecordValidators } = require('../middleware/validators');
 
 // Dispensing a prescription item is a pharmacist action, so it's authorized
 // separately before the admin/doctor-only restriction below applies to the
@@ -17,7 +19,7 @@ router.use(authenticate, authorize('admin', 'doctor'));
 
 router.get('/', medicalRecordController.list);
 router.get('/:id', medicalRecordController.get);
-router.post('/', medicalRecordController.create);
+router.post('/', medicalRecordValidators.create, validate, medicalRecordController.create);
 router.put('/:id', medicalRecordController.update);
 router.delete('/:id', authorize('admin'), medicalRecordController.remove);
 
