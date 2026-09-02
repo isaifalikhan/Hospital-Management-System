@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install -g pnpm@11 && pnpm --dir backend install && pnpm --dir frontend install && pnpm --dir frontend run build",
+  "buildCommand": "npm install -g pnpm@11 && pnpm --dir backend install --prod && pnpm --dir frontend install && pnpm --dir frontend run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
