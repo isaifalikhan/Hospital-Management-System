@@ -33,12 +33,19 @@ on the frontend, with JWT authentication and role-based access control.
   labs, etc.), apply discounts/tax, record partial or full payments, print or save an
   invoice as a PDF, and export invoices to CSV.
 - **Pharmacy & Inventory** — Track medicine stock, unit prices, reorder levels, expiry dates,
-  and log stock in/out transactions with automatic low-stock flags.
+  and log stock in/out transactions with automatic low-stock flags and reorder-quantity
+  suggestions for anything at or below its reorder level.
 - **Dashboard & Analytics** — At-a-glance stats plus a 14-day revenue trend chart, an
   appointments-booked trend chart, and an appointments-by-department breakdown, all
   built with Recharts.
 - **Audit Log** — Every create/update/delete across the system is recorded with who did it
   and when; admins can filter and review it from a dedicated page.
+- **Staff Attendance** — Any logged-in staff member can clock in/out for their shift from a
+  dedicated Attendance page; admins get a hospital-wide attendance table filterable by staff
+  member and date range, while everyone else only ever sees their own clock-in history.
+- **Shift Roster** — Admins assign weekly shifts (date, start/end time, notes) to staff from a
+  roster table with full CRUD; every staff member can view their own upcoming shifts from the
+  same page.
 - **Production Hardening** — `helmet` security headers, general + login-specific rate
   limiting, request validation on every write endpoint (`express-validator`), and
   fail-fast environment validation on startup.
@@ -133,6 +140,8 @@ a couple of invoices, and a small medicine inventory).
 | Staff Users         | ✅    | —      | —             | —          |
 | Audit Log           | ✅    | —      | —             | —          |
 | Data Backup         | ✅    | —      | —             | —          |
+| Attendance          | ✅ (hospital-wide) | Own | Own      | Own        |
+| Shift Roster        | ✅ (assign/edit)   | View own | View own | View own |
 
 Access is enforced on both the frontend (navigation/routes) and backend (API middleware),
 so directly calling the API with the wrong role will also be rejected with a 403.
@@ -172,6 +181,10 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/reports/patients.csv`, `/api/reports/appointments.csv`, `/api/reports/invoices.csv`
 - `GET /api/admin/backup` (admin only) — downloads a SQLite file snapshot locally, or a JSON
   export of every table when running on Postgres
+- `GET /api/attendance` (admin sees everyone, filterable by `userId`/`from`/`to`; other roles
+  always see only their own records), `POST /api/attendance/clock-in`, `POST /api/attendance/clock-out`
+- `GET/POST/PUT/DELETE /api/shifts` (create/update/delete admin only; `GET` scoped the same way
+  as `/api/attendance` — admin sees the whole roster, everyone else only their own shifts)
 
 ## Changelog
 

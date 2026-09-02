@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle, ClipboardList } from 'lucide-react';
 import { medicinesApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
@@ -83,6 +83,12 @@ export default function Pharmacy() {
     setStockReason(type === 'in' ? 'restock' : 'dispensed');
   }
 
+  function openReorder(medicine) {
+    setStockModal({ medicine, type: 'in' });
+    setStockQty(String(medicine.suggestedReorderQty || ''));
+    setStockReason('restock (reorder suggestion)');
+  }
+
   async function handleStockSubmit(e) {
     e.preventDefault();
     if (!stockQty || Number(stockQty) <= 0) return alert('Enter a valid quantity');
@@ -95,6 +101,8 @@ export default function Pharmacy() {
     }
   }
 
+  const reorderSuggestions = medicines.filter((m) => m.suggestedReorderQty > 0);
+
   return (
     <div>
       <PageHeader
@@ -106,6 +114,44 @@ export default function Pharmacy() {
           </button>
         }
       />
+
+      {reorderSuggestions.length > 0 && (
+        <div className="card mb-6 border-amber-200 bg-amber-50/50 p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <ClipboardList size={18} className="text-amber-600" />
+            <h3 className="font-semibold text-slate-900">Reorder Suggestions</h3>
+            <span className="badge bg-amber-100 text-amber-700">{reorderSuggestions.length} medicine{reorderSuggestions.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="py-1.5 pr-4">Name</th>
+                  <th className="py-1.5 pr-4">In Stock</th>
+                  <th className="py-1.5 pr-4">Reorder Level</th>
+                  <th className="py-1.5 pr-4">Suggested Order Qty</th>
+                  <th className="py-1.5 pr-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100">
+                {reorderSuggestions.map((m) => (
+                  <tr key={m.id}>
+                    <td className="py-2 pr-4 font-medium text-slate-900">{m.name}</td>
+                    <td className="py-2 pr-4 text-rose-600 font-medium">{m.quantityInStock}</td>
+                    <td className="py-2 pr-4 text-slate-500">{m.reorderLevel}</td>
+                    <td className="py-2 pr-4 font-medium text-slate-800">{m.suggestedReorderQty} {m.unit}(s)</td>
+                    <td className="py-2 pr-0 text-right">
+                      <button onClick={() => openReorder(m)} className="text-xs font-medium text-indigo-600 hover:underline">
+                        Order now
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input className="input w-full max-w-xs" placeholder="Search medicines..." value={search} onChange={(e) => setSearch(e.target.value)} />

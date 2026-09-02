@@ -130,3 +130,16 @@ export const usersApi = {
   update: (id, data) => client.put(`/users/${id}`, data),
   remove: (id) => client.delete(`/users/${id}`),
 };
+
+export const attendanceApi = {
+  list: (params) => client.get('/attendance', { params }),
+  clockIn: () => client.post('/attendance/clock-in'),
+  clockOut: () => client.post('/attendance/clock-out'),
+};
+
+export const shiftsApi = {
+  list: (params) => client.get('/shifts', { params }),
+  create: (data) => client.post('/shifts', data),
+  update: (id, data) => client.put(`/shifts/${id}`, data),
+  remove: (id) => client.delete(`/shifts/${id}`),
+};

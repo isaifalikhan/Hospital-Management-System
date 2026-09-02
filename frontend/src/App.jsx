@@ -17,6 +17,8 @@ import LabOrders from './pages/LabOrders';
 import Admissions from './pages/Admissions';
 import AuditLog from './pages/AuditLog';
 import Backup from './pages/Backup';
+import Attendance from './pages/Attendance';
+import Roster from './pages/Roster';
 
 export default function App() {
   return (
@@ -52,6 +54,10 @@ export default function App() {
             />
 
             <Route path="/doctors" element={<Doctors />} />
+
+            <Route path="/attendance" element={<Attendance />} />
+
+            <Route path="/roster" element={<Roster />} />
 
             <Route
               path="/departments"
