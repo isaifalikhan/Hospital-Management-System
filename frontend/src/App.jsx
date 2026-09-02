@@ -19,6 +19,7 @@ import AuditLog from './pages/AuditLog';
 import Backup from './pages/Backup';
 import Attendance from './pages/Attendance';
 import Roster from './pages/Roster';
+import Insights from './pages/Insights';
 
 export default function App() {
   return (
@@ -136,6 +137,15 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin']}>
                   <Backup />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/insights"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <Insights />
                 </ProtectedRoute>
               }
             />

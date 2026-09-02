@@ -57,6 +57,10 @@ on the frontend, with JWT authentication and role-based access control.
   canvas, no UI library) lets doctors sign off medical records and discharge summaries with
   mouse or touch. Signatures are stored as base64 PNGs and rendered on the printable medical
   record and discharge summary views alongside the rest of the print/PDF workflow.
+- **Owner Insights** — Admin-only reporting page with revenue broken down by doctor and by
+  department, doctor utilization (completed appointments vs. each doctor's configured
+  available slots), and ward/bed occupancy, all over a selectable date range (defaults to
+  the last 30 days). Export the same report to CSV.
 
 ## Project Structure
 
@@ -142,6 +146,7 @@ a couple of invoices, and a small medicine inventory).
 | Data Backup         | ✅    | —      | —             | —          |
 | Attendance          | ✅ (hospital-wide) | Own | Own      | Own        |
 | Shift Roster        | ✅ (assign/edit)   | View own | View own | View own |
+| Owner Insights      | ✅    | —      | —             | —          |
 
 Access is enforced on both the frontend (navigation/routes) and backend (API middleware),
 so directly calling the API with the wrong role will also be rejected with a 403.
@@ -185,6 +190,9 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
   always see only their own records), `POST /api/attendance/clock-in`, `POST /api/attendance/clock-out`
 - `GET/POST/PUT/DELETE /api/shifts` (create/update/delete admin only; `GET` scoped the same way
   as `/api/attendance` — admin sees the whole roster, everyone else only their own shifts)
+- `GET /api/dashboard/owner-insights?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (admin only;
+  both params optional, defaults to the last 30 days)
+- `GET /api/reports/owner-insights.csv?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (admin only)
 
 ## Changelog
 

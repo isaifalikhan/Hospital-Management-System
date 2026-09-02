@@ -1,6 +1,7 @@
 const { Patient, Doctor, Appointment, Invoice, Medicine, Department } = require('../models');
 const { Op } = require('sequelize');
 const { checkExpiry } = require('../utils/safetyChecks');
+const { computeOwnerInsights } = require('../utils/ownerInsights');
 
 function lastNDates(n) {
   const dates = [];
@@ -112,5 +113,18 @@ exports.analytics = async (req, res, next) => {
       appointmentsTrend: days.map((date) => ({ date, appointments: appointmentsByDay[date] })),
       appointmentsByDepartment: Object.entries(byDepartment).map(([name, value]) => ({ name, value })),
     });
+  } catch (err) { next(err); }
+};
+
+// Owner/admin insights over an arbitrary date range (defaults to the last
+// 30 days): revenue by doctor and by department, doctor utilization
+// (completed appointments vs. configured available slots), and ward/bed
+// occupancy. See utils/ownerInsights.js for the shared computation, also
+// used by the CSV export in reportController.
+exports.ownerInsights = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const insights = await computeOwnerInsights({ startDate, endDate });
+    res.json(insights);
   } catch (err) { next(err); }
 };
