@@ -8,6 +8,17 @@ const {
 
 async function seed() {
   await sequelize.sync({ force: true });
+  // Enforces "one active appointment per doctor/date/time" at the DB level
+  // so two concurrent booking requests can't both pass the app-level clash
+  // check and double-book the same slot. Cancelled appointments are
+  // excluded so a freed-up slot can be rebooked. Normally created by
+  // server.js's start() on boot, which never runs on Vercel -- this is
+  // that deployment's only path to getting the index created.
+  await sequelize.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS appointments_doctor_date_time_active
+     ON appointments (doctorId, date, time)
+     WHERE status <> 'cancelled'`
+  );
   console.log('Database reset. Seeding sample data...');
 
   const password = await bcrypt.hash('password123', 10);

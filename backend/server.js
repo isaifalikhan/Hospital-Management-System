@@ -146,6 +146,15 @@ async function start() {
   }
 }
 
-start();
+// start() binds a port and treats any DB hiccup as fatal (process.exit) --
+// both correct for the persistent LAN/local process this was written for,
+// both wrong on Vercel: there's no port to bind (the exported app is called
+// directly per-request), and exiting the process would kill every request
+// the function happened to be handling, not just this one connection
+// attempt. Schema creation there is handled once via GET /api/setup/seed
+// (routes/setupRoutes.js) instead of on every cold start.
+if (!process.env.VERCEL) {
+  start();
+}
 
 module.exports = app;
