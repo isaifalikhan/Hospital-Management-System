@@ -11,6 +11,10 @@ const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 let sequelize;
 
 if (connectionString) {
+  // Sequelize's own require('pg') is dynamic (dialect-based), so Vercel's
+  // function bundler can't statically trace it and silently omits pg from
+  // the deployed function -- a static require here makes it traceable.
+  require('pg');
   sequelize = new Sequelize(connectionString, {
     dialect: 'postgres',
     logging: false,
