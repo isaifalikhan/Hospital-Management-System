@@ -243,11 +243,18 @@ async function seed() {
   console.log('  Doctor:       sjohnson / password123');
   console.log('  Receptionist: reception / password123');
   console.log('  Pharmacist:   pharmacist / password123');
-
-  await sequelize.close();
 }
 
-seed().catch(async (err) => {
-  console.error('Seeding failed:', err);
-  process.exit(1);
-});
+module.exports = seed;
+
+// Only auto-run (and close the connection afterwards) when invoked directly
+// as a CLI script — routes/setupRoutes.js imports and calls seed() itself
+// and needs to keep the connection open for the rest of the app.
+if (require.main === module) {
+  seed()
+    .then(() => sequelize.close())
+    .catch(async (err) => {
+      console.error('Seeding failed:', err);
+      process.exit(1);
+    });
+}
