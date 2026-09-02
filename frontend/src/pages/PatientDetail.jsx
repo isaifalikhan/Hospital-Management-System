@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Plus, FileText, FlaskConical, BedDouble, Receipt, CalendarClock,
-  Trash2, CheckCircle2, LogOut as LogOutIcon,
+  Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer,
 } from 'lucide-react';
 import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
+import SignaturePad from '../components/SignaturePad';
+import DischargeModal from '../components/DischargeModal';
 
-const emptyRecord = { diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '' };
+const emptyRecord = { diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '', signatureData: null };
 const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
 const emptyLabOrder = { testName: '', priority: 'routine', notes: '' };
 const emptyAdmission = { ward: '', bedNumber: '', reason: '' };
@@ -40,6 +42,9 @@ export default function PatientDetail() {
   const [admitModalOpen, setAdmitModalOpen] = useState(false);
   const [admitForm, setAdmitForm] = useState(emptyAdmission);
   const [savingAdmit, setSavingAdmit] = useState(false);
+  const [dischargeTarget, setDischargeTarget] = useState(null);
+  const [viewAdmission, setViewAdmission] = useState(null);
+  const [viewRecord, setViewRecord] = useState(null);
 
   const [showTimeline, setShowTimeline] = useState(true);
 
@@ -164,13 +169,13 @@ export default function PatientDetail() {
     }
   }
 
-  async function handleDischarge(admission) {
-    if (!confirm('Discharge this patient from ' + admission.ward + '?')) return;
+  async function handleDischargeSubmit(data) {
     try {
-      await admissionsApi.discharge(admission.id);
+      await admissionsApi.discharge(dischargeTarget.id, data);
       await load();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to discharge patient');
+      throw err;
     }
   }
 
@@ -321,7 +326,12 @@ export default function PatientDetail() {
                 <li key={r.id} className="rounded-lg border border-slate-100 p-3 text-sm">
                   <div className="mb-1 flex items-center justify-between">
                     <p className="font-medium text-slate-800 flex items-center gap-1.5"><FileText size={14} /> {r.date}</p>
-                    <span className="text-xs text-slate-500">Dr. {r.Doctor?.name?.replace(/^Dr\.?\s*/, '') || 'N/A'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">Dr. {r.Doctor?.name?.replace(/^Dr\.?\s*/, '') || 'N/A'}</span>
+                      <button onClick={() => setViewRecord(r)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="View / Print">
+                        <Eye size={14} />
+                      </button>
+                    </div>
                   </div>
                   {r.vitals && <p className="text-xs text-slate-500 mb-1">Vitals: {r.vitals}</p>}
                   <p><span className="font-medium">Diagnosis:</span> {r.diagnosis || '—'}</p>
@@ -445,11 +455,18 @@ export default function PatientDetail() {
                   </div>
                   <p className="text-xs text-slate-500">Bed {a.bedNumber} • Admitted {a.admissionDate}</p>
                   {a.dischargeDate && <p className="text-xs text-slate-500">Discharged {a.dischargeDate}</p>}
-                  {canAdmit && a.status === 'admitted' && (
-                    <button onClick={() => handleDischarge(a)} className="mt-1 text-xs text-rose-600 hover:underline flex items-center gap-1">
-                      <LogOutIcon size={13} /> Discharge
-                    </button>
-                  )}
+                  <div className="mt-1 flex items-center gap-3">
+                    {canAdmit && a.status === 'admitted' && (
+                      <button onClick={() => setDischargeTarget(a)} className="text-xs text-rose-600 hover:underline flex items-center gap-1">
+                        <LogOutIcon size={13} /> Discharge
+                      </button>
+                    )}
+                    {a.status === 'discharged' && (
+                      <button onClick={() => setViewAdmission(a)} className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
+                        <Eye size={13} /> Summary
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -510,6 +527,10 @@ export default function PatientDetail() {
             <label className="label">Notes</label>
             <textarea className="input" rows={2} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} />
           </div>
+          <div>
+            <label className="label">Doctor's Signature</label>
+            <SignaturePad onChange={(signatureData) => setRecordForm((f) => ({ ...f, signatureData }))} />
+          </div>
           <div className="flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={() => setRecordModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={savingRecord}>{savingRecord ? 'Saving...' : 'Save Record'}</button>
@@ -560,6 +581,109 @@ export default function PatientDetail() {
             <button type="submit" className="btn-primary" disabled={savingAdmit}>{savingAdmit ? 'Admitting...' : 'Admit Patient'}</button>
           </div>
         </form>
+      </Modal>
+
+      <DischargeModal
+        open={!!dischargeTarget}
+        admission={dischargeTarget}
+        onClose={() => setDischargeTarget(null)}
+        onSubmit={handleDischargeSubmit}
+      />
+
+      <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">
+        {viewAdmission && (
+          <div className="print-area">
+            <div className="mb-4 flex items-center justify-between print:mb-6">
+              <div>
+                <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS — Discharge Summary</p>
+                <p className="font-medium text-slate-900">{patient.name}</p>
+                <p className="text-sm text-slate-500">
+                  {viewAdmission.ward} · Bed {viewAdmission.bedNumber} · Admitted {viewAdmission.admissionDate}
+                </p>
+              </div>
+              <button onClick={() => window.print()} className="btn-secondary print:hidden" title="Print or save as PDF">
+                <Printer size={16} /> Print / PDF
+              </button>
+            </div>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Discharge Date</dt><dd className="text-slate-800">{viewAdmission.dischargeDate || '—'}</dd></div>
+              <div>
+                <dt className="mb-1 text-slate-500">Discharge Notes</dt>
+                <dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewAdmission.dischargeNotes || 'None recorded.'}</dd>
+              </div>
+            </dl>
+            <div className="mt-6">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Doctor's Signature</p>
+              {viewAdmission.signatureData ? (
+                <img src={viewAdmission.signatureData} alt="Discharging doctor's signature" className="h-20 border-b border-slate-300" />
+              ) : (
+                <p className="text-sm text-slate-400">No signature on file.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={!!viewRecord} onClose={() => setViewRecord(null)} title="Medical Record" wide>
+        {viewRecord && (
+          <div className="print-area">
+            <div className="mb-4 flex items-center justify-between print:mb-6">
+              <div>
+                <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS — Medical Record</p>
+                <p className="font-medium text-slate-900">{patient.name}</p>
+                <p className="text-sm text-slate-500">
+                  {viewRecord.date} · Dr. {viewRecord.Doctor?.name?.replace(/^Dr\.?\s*/, '') || 'N/A'}
+                </p>
+              </div>
+              <button onClick={() => window.print()} className="btn-secondary print:hidden" title="Print or save as PDF">
+                <Printer size={16} /> Print / PDF
+              </button>
+            </div>
+            <dl className="space-y-2 text-sm">
+              {viewRecord.vitals && <div className="flex justify-between gap-3"><dt className="text-slate-500">Vitals</dt><dd className="text-slate-800">{viewRecord.vitals}</dd></div>}
+              <div><dt className="mb-1 text-slate-500">Diagnosis</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.diagnosis || '—'}</dd></div>
+              {viewRecord.treatment && <div><dt className="mb-1 text-slate-500">Treatment</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.treatment}</dd></div>}
+              {viewRecord.prescription && <div><dt className="mb-1 text-slate-500">Prescription Notes</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.prescription}</dd></div>}
+              {viewRecord.notes && <div><dt className="mb-1 text-slate-500">Notes</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.notes}</dd></div>}
+            </dl>
+
+            {viewRecord.PrescriptionItems?.length > 0 && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-slate-500">
+                    <tr>
+                      <th className="py-1 pr-2">Medicine</th>
+                      <th className="py-1 pr-2">Dosage</th>
+                      <th className="py-1 pr-2">Frequency</th>
+                      <th className="py-1 pr-2">Duration</th>
+                      <th className="py-1 pr-2">Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {viewRecord.PrescriptionItems.map((item) => (
+                      <tr key={item.id}>
+                        <td className="py-1 pr-2 font-medium text-slate-800">{item.medicineName}</td>
+                        <td className="py-1 pr-2">{item.dosage || '—'}</td>
+                        <td className="py-1 pr-2">{item.frequency || '—'}</td>
+                        <td className="py-1 pr-2">{item.duration || '—'}</td>
+                        <td className="py-1 pr-2">{item.quantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-6">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Doctor's Signature</p>
+              {viewRecord.signatureData ? (
+                <img src={viewRecord.signatureData} alt="Doctor's signature" className="h-20 border-b border-slate-300" />
+              ) : (
+                <p className="text-sm text-slate-400">No signature on file.</p>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

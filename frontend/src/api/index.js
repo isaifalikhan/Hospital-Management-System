@@ -104,6 +104,26 @@ export const medicinesApi = {
   remove: (id) => client.delete(`/medicines/${id}`),
 };
 
+export const adminApi = {
+  // Streams the full system backup (a timestamped SQLite file copy locally,
+  // or a JSON export of every table when running on hosted Postgres — the
+  // backend decides which) and saves it under the filename the server chose.
+  downloadBackup: async () => {
+    const res = await client.get('/admin/backup', { responseType: 'blob' });
+    const disposition = res.headers['content-disposition'] || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : `hms-backup-${Date.now()}`;
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+};
+
 export const usersApi = {
   list: () => client.get('/users'),
   create: (data) => client.post('/users', data),

@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BedDouble, Filter } from 'lucide-react';
+import { BedDouble, Filter, Eye, Printer } from 'lucide-react';
 import { admissionsApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
+import DischargeModal from '../components/DischargeModal';
 
 export default function Admissions() {
   const [admissions, setAdmissions] = useState([]);
   const [statusFilter, setStatusFilter] = useState('admitted');
   const [loading, setLoading] = useState(true);
+  const [dischargeTarget, setDischargeTarget] = useState(null);
+  const [viewAdmission, setViewAdmission] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -19,14 +23,13 @@ export default function Admissions() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter]);
 
-  async function handleDischarge(admission) {
-    const dischargeNotes = prompt(`Discharge notes for ${admission.Patient?.name} (optional):`);
-    if (dischargeNotes === null) return;
+  async function handleDischargeSubmit(data) {
     try {
-      await admissionsApi.discharge(admission.id, { dischargeNotes });
+      await admissionsApi.discharge(dischargeTarget.id, data);
       await load();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to discharge patient');
+      throw err;
     }
   }
 
@@ -83,9 +86,15 @@ export default function Admissions() {
                   <td className="px-4 py-3 text-slate-600">{a.dischargeDate || '—'}</td>
                   <td className="px-4 py-3"><StatusBadge status={a.status} /></td>
                   <td className="px-4 py-3 text-right">
-                    {a.status === 'admitted' && (
-                      <button onClick={() => handleDischarge(a)} className="text-xs text-rose-600 hover:underline">Discharge</button>
-                    )}
+                    <div className="flex items-center justify-end gap-3">
+                      {a.status === 'admitted' ? (
+                        <button onClick={() => setDischargeTarget(a)} className="text-xs text-rose-600 hover:underline">Discharge</button>
+                      ) : (
+                        <button onClick={() => setViewAdmission(a)} className="flex items-center gap-1 text-xs text-indigo-600 hover:underline">
+                          <Eye size={13} /> Summary
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -93,6 +102,54 @@ export default function Admissions() {
           </tbody>
         </table>
       </div>
+
+      <DischargeModal
+        open={!!dischargeTarget}
+        admission={dischargeTarget}
+        onClose={() => setDischargeTarget(null)}
+        onSubmit={handleDischargeSubmit}
+      />
+
+      <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">
+        {viewAdmission && (
+          <div className="print-area">
+            <div className="mb-4 flex items-center justify-between print:mb-6">
+              <div>
+                <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS — Discharge Summary</p>
+                <p className="font-medium text-slate-900">{viewAdmission.Patient?.name}</p>
+                <p className="text-sm text-slate-500">
+                  {viewAdmission.ward} · Bed {viewAdmission.bedNumber} · Admitted {viewAdmission.admissionDate}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 print:hidden">
+                <StatusBadge status={viewAdmission.status} />
+                <button onClick={() => window.print()} className="btn-secondary" title="Print or save as PDF">
+                  <Printer size={16} /> Print / PDF
+                </button>
+              </div>
+            </div>
+
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Attending Doctor</dt><dd className="text-slate-800">{viewAdmission.Doctor?.name || '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Reason for Admission</dt><dd className="text-right text-slate-800">{viewAdmission.reason || '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Discharge Date</dt><dd className="text-slate-800">{viewAdmission.dischargeDate || '—'}</dd></div>
+              <div>
+                <dt className="mb-1 text-slate-500">Discharge Notes</dt>
+                <dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewAdmission.dischargeNotes || 'None recorded.'}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-6">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Doctor's Signature</p>
+              {viewAdmission.signatureData ? (
+                <img src={viewAdmission.signatureData} alt="Discharging doctor's signature" className="h-20 border-b border-slate-300" />
+              ) : (
+                <p className="text-sm text-slate-400">No signature on file.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

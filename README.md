@@ -42,6 +42,14 @@ on the frontend, with JWT authentication and role-based access control.
 - **Production Hardening** — `helmet` security headers, general + login-specific rate
   limiting, request validation on every write endpoint (`express-validator`), and
   fail-fast environment validation on startup.
+- **Admin Data Backup** — Admins can download a full, on-demand backup of the system's data
+  from a dedicated Data Backup page: a timestamped SQLite file snapshot on a local/LAN
+  install, or a JSON export of every table when running against hosted Postgres. Restricted
+  to the Admin role and recorded in the Audit Log.
+- **E-Signature Capture** — A lightweight, dependency-free signature pad (plain HTML5
+  canvas, no UI library) lets doctors sign off medical records and discharge summaries with
+  mouse or touch. Signatures are stored as base64 PNGs and rendered on the printable medical
+  record and discharge summary views alongside the rest of the print/PDF workflow.
 
 ## Project Structure
 
@@ -124,6 +132,7 @@ a couple of invoices, and a small medicine inventory).
 | Pharmacy            | ✅    | —      | —             | ✅         |
 | Staff Users         | ✅    | —      | —             | —          |
 | Audit Log           | ✅    | —      | —             | —          |
+| Data Backup         | ✅    | —      | —             | —          |
 
 Access is enforced on both the frontend (navigation/routes) and backend (API middleware),
 so directly calling the API with the wrong role will also be rejected with a 403.
@@ -161,6 +170,8 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/dashboard/summary`, `GET /api/dashboard/analytics`
 - `GET /api/audit-logs` (admin only)
 - `GET /api/reports/patients.csv`, `/api/reports/appointments.csv`, `/api/reports/invoices.csv`
+- `GET /api/admin/backup` (admin only) — downloads a SQLite file snapshot locally, or a JSON
+  export of every table when running on Postgres
 
 ## Changelog
 
