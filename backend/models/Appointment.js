@@ -11,6 +11,11 @@ const Appointment = sequelize.define('Appointment', {
     defaultValue: 'scheduled',
   },
   notes: { type: DataTypes.TEXT, allowNull: true },
+  // Telemedicine: when true, videoLink holds a free Jitsi Meet room URL
+  // (https://meet.jit.si/<uuid>) generated server-side at booking time —
+  // no API key or third-party account needed. See utils/telemedicine.js.
+  isVideoConsult: { type: DataTypes.BOOLEAN, defaultValue: false },
+  videoLink: { type: DataTypes.STRING, allowNull: true },
 }, {
   tableName: 'appointments',
   timestamps: true,
