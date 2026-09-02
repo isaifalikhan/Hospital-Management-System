@@ -9,6 +9,7 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
   prescription: { type: DataTypes.TEXT, allowNull: true },
   notes: { type: DataTypes.TEXT, allowNull: true },
   vitals: { type: DataTypes.STRING, allowNull: true }, // e.g. "BP:120/80, Temp:98.6F, Pulse:72"
+  signatureData: { type: DataTypes.TEXT, allowNull: true }, // base64 PNG of the doctor's e-signature
 }, {
   tableName: 'medical_records',
   timestamps: true,

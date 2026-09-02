@@ -44,6 +44,7 @@ exports.discharge = async (req, res, next) => {
     admission.status = 'discharged';
     admission.dischargeDate = new Date().toISOString().slice(0, 10);
     admission.dischargeNotes = req.body.dischargeNotes || admission.dischargeNotes;
+    admission.signatureData = req.body.signatureData || admission.signatureData;
     await admission.save();
 
     const stillAdmitted = await Admission.count({ where: { patientId: admission.patientId, status: 'admitted' } });

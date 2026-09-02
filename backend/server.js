@@ -26,6 +26,7 @@ const labOrderRoutes = require('./routes/labOrderRoutes');
 const admissionRoutes = require('./routes/admissionRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const backupRoutes = require('./routes/backupRoutes');
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/lab-orders', labOrderRoutes);
 app.use('/api/admissions', admissionRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/admin', backupRoutes);
 
 // Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
 // so the whole app can run as one process on one port for LAN/offline use —
