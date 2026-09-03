@@ -27,8 +27,13 @@ router.get('/seed', async (req, res) => {
     return res.status(409).json({ message: `Database already has ${existing} user(s) — refusing to reseed and overwrite existing data.` });
   }
 
-  await seed();
-  res.json({ message: 'Database seeded. Login with admin / password123 (see backend/utils/seed.js for the other demo accounts), then remove SETUP_SECRET and this route.' });
+  try {
+    await seed();
+    res.json({ message: 'Database seeded. Login with admin / password123 (see backend/utils/seed.js for the other demo accounts), then remove SETUP_SECRET and this route.' });
+  } catch (err) {
+    console.error('Seeding failed:', err);
+    res.status(500).json({ message: 'Seeding failed', error: err.message });
+  }
 });
 
 module.exports = router;

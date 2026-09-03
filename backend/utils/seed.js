@@ -14,10 +14,13 @@ async function seed() {
   // excluded so a freed-up slot can be rebooked. Normally created by
   // server.js's start() on boot, which never runs on Vercel -- this is
   // that deployment's only path to getting the index created.
+  // Column names must be quoted: Sequelize creates "doctorId" case-preserved,
+  // but an unquoted identifier gets folded to lowercase by Postgres (though
+  // not by SQLite, which is why this only broke here) and wouldn't match.
   await sequelize.query(
     `CREATE UNIQUE INDEX IF NOT EXISTS appointments_doctor_date_time_active
-     ON appointments (doctorId, date, time)
-     WHERE status <> 'cancelled'`
+     ON "appointments" ("doctorId", "date", "time")
+     WHERE "status" <> 'cancelled'`
   );
   console.log('Database reset. Seeding sample data...');
 
