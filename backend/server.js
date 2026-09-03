@@ -130,11 +130,17 @@ async function start() {
     // Enforces "one active appointment per doctor/date/time" at the DB level
     // so two concurrent booking requests can't both pass the app-level clash
     // check and double-book the same slot. Cancelled appointments are
-    // excluded so a freed-up slot can be rebooked.
+    // excluded so a freed-up slot can be rebooked, and walk-ins are excluded
+    // entirely since they're queued (by tokenNumber), not slot-booked — two
+    // walk-ins for the same doctor legitimately share a check-in "time".
+    // Dropped and recreated (not just IF NOT EXISTS) so a database that
+    // already has the pre-visitType version of this index picks up the new
+    // WHERE clause instead of silently keeping the old one.
+    await sequelize.query('DROP INDEX IF EXISTS appointments_doctor_date_time_active');
     await sequelize.query(
-      `CREATE UNIQUE INDEX IF NOT EXISTS appointments_doctor_date_time_active
+      `CREATE UNIQUE INDEX appointments_doctor_date_time_active
        ON appointments (doctorId, date, time)
-       WHERE status <> 'cancelled'`
+       WHERE status <> 'cancelled' AND visitType = 'scheduled'`
     );
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);

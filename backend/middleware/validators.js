@@ -76,11 +76,16 @@ const doctorValidators = {
 };
 
 const appointmentValidators = {
+  // date/time are only required for a 'scheduled' (default) appointment —
+  // a 'walk-in' front-desk check-in has the server assign today's date, the
+  // actual check-in time, and a queue tokenNumber instead (see
+  // controllers/appointmentController.js#create).
   create: [
     body('patientId').isInt().withMessage('A valid patientId is required'),
     body('doctorId').isInt().withMessage('A valid doctorId is required'),
-    body('date').isISO8601().withMessage('A valid date (YYYY-MM-DD) is required'),
-    body('time').matches(/^\d{2}:\d{2}$/).withMessage('Time must be in HH:MM format'),
+    body('visitType').optional().isIn(['scheduled', 'walk-in']).withMessage('visitType must be "scheduled" or "walk-in"'),
+    body('date').if(body('visitType').not().equals('walk-in')).isISO8601().withMessage('A valid date (YYYY-MM-DD) is required'),
+    body('time').if(body('visitType').not().equals('walk-in')).matches(/^\d{2}:\d{2}$/).withMessage('Time must be in HH:MM format'),
     body('isVideoConsult').optional().isBoolean().withMessage('isVideoConsult must be true or false'),
   ],
   availableSlots: [

@@ -20,6 +20,13 @@ const Appointment = sequelize.define('Appointment', {
   // no API key or third-party account needed. See utils/telemedicine.js.
   isVideoConsult: { type: DataTypes.BOOLEAN, defaultValue: false },
   videoLink: { type: DataTypes.STRING, allowNull: true },
+  // 'walk-in' = a front-desk check-in (see controllers/appointmentController.js
+  // #create): the server assigns today's date, the actual check-in time, and
+  // a per-doctor daily tokenNumber instead of a client-picked time slot, and
+  // it's exempt from the doctor/date/time uniqueness index below (multiple
+  // walk-ins legitimately share a "time" — they're queued, not slot-booked).
+  visitType: { type: DataTypes.ENUM('scheduled', 'walk-in'), defaultValue: 'scheduled' },
+  tokenNumber: { type: DataTypes.INTEGER, allowNull: true },
 }, {
   tableName: 'appointments',
   timestamps: true,

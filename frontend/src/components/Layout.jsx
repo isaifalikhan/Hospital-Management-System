@@ -2,12 +2,13 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, CalendarClock, Receipt, Pill,
   UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText,
-  DatabaseBackup, Clock, CalendarDays, LineChart,
+  DatabaseBackup, Clock, CalendarDays, LineChart, Ticket,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
+  { to: '/checkin', label: 'Check-In', icon: Ticket, roles: ['admin', 'receptionist'] },
   { to: '/patients', label: 'Patients', icon: Users, roles: ['admin', 'doctor', 'receptionist'] },
   { to: '/appointments', label: 'Appointments', icon: CalendarClock, roles: ['admin', 'doctor', 'receptionist'] },
   { to: '/lab-orders', label: 'Lab Orders', icon: FlaskConical, roles: ['admin', 'doctor'] },

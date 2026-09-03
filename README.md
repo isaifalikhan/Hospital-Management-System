@@ -61,6 +61,13 @@ on the frontend, with JWT authentication and role-based access control.
   department, doctor utilization (completed appointments vs. each doctor's configured
   available slots), and ward/bed occupancy, all over a selectable date range (defaults to
   the last 30 days). Export the same report to CSV.
+- **Front Desk Check-In** — A dedicated Check-In page (admin/receptionist) for walk-in
+  patients: search for an existing patient or register a new one on the spot, pick a
+  doctor, and submit — no date/time picker. The server assigns today's date, the actual
+  check-in time, and a per-doctor daily queue token number automatically (`Token #N`),
+  shown prominently on confirmation and alongside the visit everywhere else in the app
+  (Appointments list/calendar). Walk-ins queue by token rather than a booked time slot,
+  so any number of them can share a doctor's day without colliding.
 - **Public Online Booking** — A no-login booking page (`/book`, linked from the login
   screen) lets a walk-in web visitor pick a doctor and a genuinely open slot (reusing the
   same availability logic as the staff scheduler) and submit their own name, phone,
@@ -167,6 +174,7 @@ a couple of invoices, and a small medicine inventory).
 | Dashboard           | ✅    | ✅     | ✅            | ✅         |
 | Patients            | ✅    | View   | ✅            | —          |
 | Appointments        | ✅    | View   | ✅            | —          |
+| Check-In (walk-in)  | ✅    | —      | ✅            | —          |
 | Lab Orders          | ✅    | ✅     | —             | —          |
 | Admissions          | ✅    | ✅     | ✅            | —          |
 | Medical Records     | ✅    | ✅     | —             | —          |
@@ -212,7 +220,9 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET/POST/PUT/DELETE /api/patients`
 - `GET/POST/PUT/DELETE /api/doctors`
 - `GET/POST/PUT/DELETE /api/departments`
-- `GET/POST/PUT/DELETE /api/appointments`
+- `GET/POST/PUT/DELETE /api/appointments` — `POST` accepts `visitType: 'walk-in'` for a
+  front-desk check-in (only `patientId`/`doctorId` required; server assigns date, time, and
+  `tokenNumber`) instead of the default `'scheduled'` (requires `date`/`time`, no token)
 - `GET/POST/PUT/DELETE /api/medical-records`, `POST /api/medical-records/prescription-items/:itemId/dispense`
 - `GET /api/doctors/:id/available-slots?date=YYYY-MM-DD`
 - `GET/POST/PUT/DELETE /api/lab-orders`

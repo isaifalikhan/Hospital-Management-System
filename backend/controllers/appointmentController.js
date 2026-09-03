@@ -37,21 +37,47 @@ exports.get = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const { patientId, doctorId, date, time } = req.body;
-    if (!patientId || !doctorId || !date || !time) {
-      return res.status(400).json({ message: 'patientId, doctorId, date, and time are required' });
+    const { patientId, doctorId } = req.body;
+    const visitType = req.body.visitType === 'walk-in' ? 'walk-in' : 'scheduled';
+    if (!patientId || !doctorId) {
+      return res.status(400).json({ message: 'patientId and doctorId are required' });
     }
 
-    const clash = await Appointment.findOne({
-      where: { doctorId, date, time, status: { [Op.ne]: 'cancelled' } },
-    });
-    if (clash) {
-      return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+    const payload = { ...req.body, visitType };
+
+    if (visitType === 'walk-in') {
+      // Front-desk check-in: the server — not the client — decides the
+      // date/time (right now) and the queue position, so a receptionist
+      // only ever needs to pick the patient and the doctor. Deliberately
+      // not run through the doctor/date/time clash check above: walk-ins
+      // queue by tokenNumber, they don't occupy a discrete booked slot, so
+      // more than one can legitimately share the same check-in minute (the
+      // DB-level unique index is scoped to visitType = 'scheduled' for the
+      // same reason — see server.js).
+      const now = new Date();
+      payload.date = now.toISOString().slice(0, 10);
+      payload.time = now.toTimeString().slice(0, 5);
+      const last = await Appointment.findOne({
+        where: { doctorId, date: payload.date, visitType: 'walk-in' },
+        order: [['tokenNumber', 'DESC']],
+      });
+      payload.tokenNumber = (last?.tokenNumber || 0) + 1;
+    } else {
+      const { date, time } = req.body;
+      if (!date || !time) {
+        return res.status(400).json({ message: 'date and time are required for a scheduled appointment' });
+      }
+      const clash = await Appointment.findOne({
+        where: { doctorId, date, time, status: { [Op.ne]: 'cancelled' } },
+      });
+      if (clash) {
+        return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+      }
+      payload.tokenNumber = null;
     }
 
     // Generate the Jitsi room link server-side at booking time (not
     // client-supplied) so it can't be spoofed to point somewhere else.
-    const payload = { ...req.body };
     if (payload.isVideoConsult) {
       payload.videoLink = buildVideoConsultLink();
     }
@@ -70,7 +96,9 @@ exports.create = async (req, res, next) => {
     });
     await logAudit(req, {
       action: 'create', entityType: 'Appointment', entityId: appt.id,
-      summary: `Booked appointment for patient #${patientId} with doctor #${doctorId} on ${date} ${time}`,
+      summary: visitType === 'walk-in'
+        ? `Checked in walk-in patient #${patientId} with doctor #${doctorId} — token #${payload.tokenNumber}`
+        : `Booked appointment for patient #${patientId} with doctor #${doctorId} on ${payload.date} ${payload.time}`,
     });
     res.status(201).json(full);
   } catch (err) { next(err); }

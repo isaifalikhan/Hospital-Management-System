@@ -25,6 +25,7 @@ import Attendance from './pages/Attendance';
 import Roster from './pages/Roster';
 import Insights from './pages/Insights';
 import PublicBooking from './pages/PublicBooking';
+import CheckIn from './pages/CheckIn';
 
 export default function App() {
   return (
@@ -93,6 +94,15 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
                   <Appointments />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/checkin"
+              element={
+                <ProtectedRoute roles={['admin', 'receptionist']}>
+                  <CheckIn />
                 </ProtectedRoute>
               }
             />

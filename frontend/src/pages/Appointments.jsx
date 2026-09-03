@@ -270,7 +270,14 @@ export default function Appointments() {
               ) : (
                 appointments.map((a) => (
                   <tr key={a.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-800">{a.date} <span className="text-slate-400">{a.time}</span></td>
+                    <td className="px-4 py-3 text-slate-800">
+                      {a.date} <span className="text-slate-400">{a.time}</span>
+                      {a.visitType === 'walk-in' && (
+                        <span className="badge ml-2 bg-amber-50 text-amber-700" title="Walk-in check-in">
+                          Token #{a.tokenNumber}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-medium text-slate-900">{a.Patient?.name}</td>
                     <td className="px-4 py-3 text-slate-600">{a.Doctor?.name}</td>
                     <td className="px-4 py-3 text-slate-600">
@@ -348,7 +355,7 @@ export default function Appointments() {
                           'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
                         }`}
                       >
-                        <span className="font-semibold">{a.time}</span> {a.Patient?.name}
+                        <span className="font-semibold">{a.visitType === 'walk-in' ? `#${a.tokenNumber}` : a.time}</span> {a.Patient?.name}
                         <br /><span className="text-[10px] opacity-75">{a.Doctor?.name}</span>
                       </button>
                     ))
