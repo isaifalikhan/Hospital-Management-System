@@ -1,5 +1,6 @@
 const { Admission, Patient, Doctor } = require('../models');
 const { logAudit } = require('../utils/audit');
+const { deleteAllForEntity } = require('../utils/attachmentStorage');
 
 exports.list = async (req, res, next) => {
   try {
@@ -74,6 +75,7 @@ exports.remove = async (req, res, next) => {
     const admission = await Admission.findByPk(req.params.id);
     if (!admission) return res.status(404).json({ message: 'Admission not found' });
     await admission.destroy();
+    await deleteAllForEntity('Admission', req.params.id);
     await logAudit(req, { action: 'delete', entityType: 'Admission', entityId: req.params.id });
     res.json({ message: 'Admission record deleted' });
   } catch (err) { next(err); }

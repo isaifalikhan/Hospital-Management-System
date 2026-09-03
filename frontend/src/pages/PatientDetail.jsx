@@ -11,6 +11,7 @@ import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import SignaturePad from '../components/SignaturePad';
 import DischargeModal from '../components/DischargeModal';
+import AttachmentList from '../components/AttachmentList';
 
 const emptyRecord = { diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '', signatureData: null };
 const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
@@ -485,6 +486,10 @@ export default function PatientDetail() {
                       </table>
                     </div>
                   )}
+
+                  <div className="mt-3 border-t border-slate-100 pt-2">
+                    <AttachmentList entityType="MedicalRecord" entityId={r.id} canEdit={canAddRecord} />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -530,6 +535,10 @@ export default function PatientDetail() {
                       </button>
                     </div>
                   )}
+
+                  <div className="mt-2 border-t border-slate-100 pt-2">
+                    <AttachmentList entityType="LabOrder" entityId={l.id} canEdit={canOrderLab} />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -568,6 +577,10 @@ export default function PatientDetail() {
                         <Eye size={13} /> Summary
                       </button>
                     )}
+                  </div>
+
+                  <div className="mt-2 border-t border-slate-100 pt-2">
+                    <AttachmentList entityType="Admission" entityId={a.id} canEdit={canAdmit} />
                   </div>
                 </li>
               ))}

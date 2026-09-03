@@ -1,6 +1,7 @@
 const { MedicalRecord, Patient, Doctor, Appointment, PrescriptionItem, Medicine, sequelize } = require('../models');
 const { logAudit } = require('../utils/audit');
 const { prescriptionWarnings } = require('../utils/safetyChecks');
+const { deleteAllForEntity } = require('../utils/attachmentStorage');
 
 const recordIncludes = [
   { model: Patient, attributes: ['id', 'name', 'mrn'] },
@@ -104,6 +105,7 @@ exports.remove = async (req, res, next) => {
     const record = await MedicalRecord.findByPk(req.params.id);
     if (!record) return res.status(404).json({ message: 'Medical record not found' });
     await record.destroy();
+    await deleteAllForEntity('MedicalRecord', req.params.id);
     await logAudit(req, { action: 'delete', entityType: 'MedicalRecord', entityId: req.params.id });
     res.json({ message: 'Medical record deleted' });
   } catch (err) { next(err); }

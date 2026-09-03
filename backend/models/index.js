@@ -16,6 +16,7 @@ const Admission = require('./Admission');
 const AuditLog = require('./AuditLog');
 const StaffAttendance = require('./StaffAttendance');
 const Shift = require('./Shift');
+const Attachment = require('./Attachment');
 
 // User <-> Doctor (a doctor may have a login account)
 User.hasOne(Doctor, { foreignKey: 'userId', onDelete: 'SET NULL' });
@@ -102,4 +103,5 @@ module.exports = {
   AuditLog,
   StaffAttendance,
   Shift,
+  Attachment,
 };

@@ -89,6 +89,25 @@ export const reportsApi = {
   },
 };
 
+export const attachmentsApi = {
+  list: (entityType, entityId) => client.get('/attachments', { params: { entityType, entityId } }),
+  upload: (entityType, entityId, file) => {
+    const form = new FormData();
+    form.append('entityType', entityType);
+    form.append('entityId', entityId);
+    form.append('file', file);
+    return client.post('/attachments', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  remove: (id) => client.delete(`/attachments/${id}`),
+  // Fetches the raw file as a blob (goes through the shared client, so the
+  // auth header is attached same as any other request) and hands back an
+  // object URL — the caller owns it and must revoke it when done.
+  getObjectUrl: async (id) => {
+    const res = await client.get(`/attachments/${id}/file`, { responseType: 'blob' });
+    return window.URL.createObjectURL(res.data);
+  },
+};
+
 export const invoicesApi = {
   list: (params) => client.get('/invoices', { params }),
   get: (id) => client.get(`/invoices/${id}`),

@@ -1,5 +1,6 @@
 const { LabOrder, Patient, Doctor } = require('../models');
 const { logAudit } = require('../utils/audit');
+const { deleteAllForEntity } = require('../utils/attachmentStorage');
 
 exports.list = async (req, res, next) => {
   try {
@@ -61,6 +62,7 @@ exports.remove = async (req, res, next) => {
     const order = await LabOrder.findByPk(req.params.id);
     if (!order) return res.status(404).json({ message: 'Lab order not found' });
     await order.destroy();
+    await deleteAllForEntity('LabOrder', req.params.id);
     await logAudit(req, { action: 'delete', entityType: 'LabOrder', entityId: req.params.id });
     res.json({ message: 'Lab order deleted' });
   } catch (err) { next(err); }
