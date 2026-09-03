@@ -23,8 +23,13 @@ router.get('/seed', async (req, res) => {
   }
 
   const existing = await User.count().catch(() => 0);
-  if (existing > 0) {
-    return res.status(409).json({ message: `Database already has ${existing} user(s) — refusing to reseed and overwrite existing data.` });
+  // While actively developing (new columns/models landing on main between
+  // deploys), the demo DB's schema falls behind and every request 500s with
+  // "column ... does not exist" until it's reseeded against the current
+  // models. force=true (still gated by SETUP_SECRET) allows that explicitly
+  // — never intended to survive past the demo-data stage.
+  if (existing > 0 && req.query.force !== 'true') {
+    return res.status(409).json({ message: `Database already has ${existing} user(s) — refusing to reseed and overwrite existing data. Pass &force=true to reseed anyway (e.g. after a schema change).` });
   }
 
   try {
