@@ -153,6 +153,7 @@ export const publicApi = {
   listDoctors: () => client.get('/public/doctors'),
   availableSlots: (doctorId, date) => client.get(`/public/doctors/${doctorId}/available-slots`, { params: { date } }),
   book: (data) => client.post('/public/appointments', data),
+  queue: (date) => client.get('/public/queue', { params: { date } }),
 };
 
 export const aiApi = {

@@ -5,12 +5,13 @@ const { buildVideoConsultLink } = require('../utils/telemedicine');
 
 exports.list = async (req, res, next) => {
   try {
-    const { date, doctorId, patientId, status, from, to } = req.query;
+    const { date, doctorId, patientId, status, from, to, visitType } = req.query;
     const where = {};
     if (date) where.date = date;
     if (doctorId) where.doctorId = doctorId;
     if (patientId) where.patientId = patientId;
     if (status) where.status = status;
+    if (visitType) where.visitType = visitType;
     if (from && to) where.date = { [Op.between]: [from, to] };
 
     const appointments = await Appointment.findAll({

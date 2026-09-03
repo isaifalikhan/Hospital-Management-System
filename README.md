@@ -68,6 +68,11 @@ on the frontend, with JWT authentication and role-based access control.
   shown prominently on confirmation and alongside the visit everywhere else in the app
   (Appointments list/calendar). Walk-ins queue by token rather than a booked time slot,
   so any number of them can share a doctor's day without colliding.
+- **Live Queue Board** — A staff Queue page (`/queue`) to call the next walk-in token,
+  mark one done, undo an accidental call, or mark a no-show, grouped by doctor. Pairs
+  with an unauthenticated waiting-room display (`/queue-display`, meant for a lobby TV)
+  that auto-refreshes and shows only "Now Serving #N" and the next few token numbers per
+  doctor — deliberately no patient names, so it's safe on a public screen.
 - **Public Online Booking** — A no-login booking page (`/book`, linked from the login
   screen) lets a walk-in web visitor pick a doctor and a genuinely open slot (reusing the
   same availability logic as the staff scheduler) and submit their own name, phone,
@@ -175,6 +180,7 @@ a couple of invoices, and a small medicine inventory).
 | Patients            | ✅    | View   | ✅            | —          |
 | Appointments        | ✅    | View   | ✅            | —          |
 | Check-In (walk-in)  | ✅    | —      | ✅            | —          |
+| Queue               | ✅    | ✅     | ✅            | —          |
 | Lab Orders          | ✅    | ✅     | —             | —          |
 | Admissions          | ✅    | ✅     | ✅            | —          |
 | Medical Records     | ✅    | ✅     | —             | —          |
@@ -244,6 +250,8 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/reports/owner-insights.csv?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (admin only)
 - `GET /api/public/doctors`, `GET /api/public/doctors/:id/available-slots?date=YYYY-MM-DD`,
   `POST /api/public/appointments` — no auth required (public booking; rate-limited)
+- `GET /api/public/queue?date=YYYY-MM-DD` — no auth required; token numbers and doctor
+  names only, never patient names (waiting-room display)
 - `GET /api/cron/reminders` — no JWT; requires `Authorization: Bearer <CRON_SECRET>` instead.
   Runs the same reminder logic as the local scheduler; meant to be called by Vercel Cron, not
   the frontend. Returns 501 if `CRON_SECRET` isn't configured.

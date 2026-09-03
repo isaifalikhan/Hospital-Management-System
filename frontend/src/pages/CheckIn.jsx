@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { UserPlus, Search, CheckCircle2, Ticket, AlertCircle } from 'lucide-react';
 import { patientsApi, doctorsApi, appointmentsApi } from '../api';
 import PageHeader from '../components/PageHeader';
@@ -117,7 +118,10 @@ export default function CheckIn() {
               <p className="text-2xl font-bold text-indigo-700">#{confirmation.tokenNumber}</p>
             </div>
           </div>
-          <button className="btn-primary mt-5" onClick={checkInAnother}>Check in another patient</button>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <button className="btn-primary" onClick={checkInAnother}>Check in another patient</button>
+            <Link to="/queue" className="btn-secondary">View Queue</Link>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-4">

@@ -26,6 +26,8 @@ import Roster from './pages/Roster';
 import Insights from './pages/Insights';
 import PublicBooking from './pages/PublicBooking';
 import CheckIn from './pages/CheckIn';
+import Queue from './pages/Queue';
+import QueueDisplay from './pages/QueueDisplay';
 
 export default function App() {
   return (
@@ -35,6 +37,10 @@ export default function App() {
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/book" element={<PublicBooking />} />
+          {/* No-login waiting-room queue board, meant for a lobby TV/kiosk —
+              see backend/controllers/publicController.js#queue for why it's safe
+              to leave unauthenticated (no patient names). */}
+          <Route path="/queue-display" element={<QueueDisplay />} />
 
           {/* Patient self-service portal — entirely separate auth guard from
               the staff routes below (see PatientPortalContext / PatientPortalGuard). */}
@@ -103,6 +109,15 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin', 'receptionist']}>
                   <CheckIn />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/queue"
+              element={
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                  <Queue />
                 </ProtectedRoute>
               }
             />

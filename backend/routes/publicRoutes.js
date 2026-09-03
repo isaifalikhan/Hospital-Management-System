@@ -20,4 +20,8 @@ router.get('/doctors/:id/available-slots', appointmentValidators.availableSlots,
 
 router.post('/appointments', publicValidators.book, validate, publicController.book);
 
+// Waiting-room queue board — no auth, no patient names (see
+// publicController.queue for what it deliberately omits).
+router.get('/queue', publicValidators.queue, validate, publicController.queue);
+
 module.exports = router;

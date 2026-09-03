@@ -95,3 +95,41 @@ exports.book = async (req, res, next) => {
     });
   } catch (err) { next(err); }
 };
+
+// Public, unauthenticated waiting-room queue board — meant to run on a
+// lobby TV/kiosk with no login. Deliberately returns token numbers and
+// doctor names only, never patient names, so it's safe to display where
+// anyone can see it. Staff call/complete tokens from the authenticated
+// Queue page (PUT /api/appointments/:id — see frontend/src/pages/Queue.jsx).
+exports.queue = async (req, res, next) => {
+  try {
+    const date = req.query.date || new Date().toISOString().slice(0, 10);
+    const appts = await Appointment.findAll({
+      where: { date, visitType: 'walk-in', status: { [Op.ne]: 'cancelled' } },
+      include: [{ model: Doctor, attributes: ['id', 'name'] }],
+    });
+
+    const byDoctor = new Map();
+    for (const a of appts) {
+      if (!byDoctor.has(a.doctorId)) {
+        byDoctor.set(a.doctorId, { doctorId: a.doctorId, doctorName: a.Doctor?.name, tokens: [] });
+      }
+      byDoctor.get(a.doctorId).tokens.push(a);
+    }
+
+    const queue = Array.from(byDoctor.values()).map(({ doctorId, doctorName, tokens }) => {
+      const active = tokens.filter((t) => t.status !== 'completed' && t.status !== 'no-show');
+      const called = active.filter((t) => t.calledAt).sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt));
+      const waiting = active.filter((t) => !t.calledAt).sort((a, b) => a.tokenNumber - b.tokenNumber);
+      return {
+        doctorId,
+        doctorName,
+        nowServing: called[0]?.tokenNumber ?? null,
+        waitingCount: waiting.length,
+        nextTokens: waiting.slice(0, 3).map((t) => t.tokenNumber),
+      };
+    });
+
+    res.json(queue);
+  } catch (err) { next(err); }
+};

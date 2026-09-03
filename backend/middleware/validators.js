@@ -211,6 +211,9 @@ const publicValidators = {
     body('time').matches(/^\d{2}:\d{2}$/).withMessage('Time must be in HH:MM format'),
     body('reason').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).withMessage('Reason is too long'),
   ],
+  queue: [
+    query('date').optional({ values: 'falsy' }).isISO8601().withMessage('date must be a valid date (YYYY-MM-DD)'),
+  ],
 };
 
 module.exports = {

@@ -27,6 +27,10 @@ const Appointment = sequelize.define('Appointment', {
   // walk-ins legitimately share a "time" — they're queued, not slot-booked).
   visitType: { type: DataTypes.ENUM('scheduled', 'walk-in'), defaultValue: 'scheduled' },
   tokenNumber: { type: DataTypes.INTEGER, allowNull: true },
+  // Set when staff "calls" a walk-in token to be seen (see the Queue page
+  // and GET /api/public/queue); null means still waiting. The most
+  // recently-called, not-yet-completed token per doctor is "now serving".
+  calledAt: { type: DataTypes.DATE, allowNull: true },
 }, {
   tableName: 'appointments',
   timestamps: true,
