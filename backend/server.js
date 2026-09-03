@@ -136,11 +136,16 @@ async function start() {
     // Dropped and recreated (not just IF NOT EXISTS) so a database that
     // already has the pre-visitType version of this index picks up the new
     // WHERE clause instead of silently keeping the old one.
+    // Identifiers must be quoted: Sequelize creates "doctorId"/"visitType"
+    // case-preserved, but an unquoted identifier gets folded to lowercase by
+    // Postgres (SQLite doesn't do this, which is why this only broke here)
+    // and wouldn't match -- this previously crashed start() on every Vercel
+    // cold start with Postgres connected ("column \"visittype\" does not exist").
     await sequelize.query('DROP INDEX IF EXISTS appointments_doctor_date_time_active');
     await sequelize.query(
       `CREATE UNIQUE INDEX appointments_doctor_date_time_active
-       ON appointments (doctorId, date, time)
-       WHERE status <> 'cancelled' AND visitType = 'scheduled'`
+       ON "appointments" ("doctorId", "date", "time")
+       WHERE "status" <> 'cancelled' AND "visitType" = 'scheduled'`
     );
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);

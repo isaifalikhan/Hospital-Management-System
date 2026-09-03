@@ -17,10 +17,11 @@ async function seed() {
   // Column names must be quoted: Sequelize creates "doctorId" case-preserved,
   // but an unquoted identifier gets folded to lowercase by Postgres (though
   // not by SQLite, which is why this only broke here) and wouldn't match.
+  await sequelize.query('DROP INDEX IF EXISTS appointments_doctor_date_time_active');
   await sequelize.query(
-    `CREATE UNIQUE INDEX IF NOT EXISTS appointments_doctor_date_time_active
+    `CREATE UNIQUE INDEX appointments_doctor_date_time_active
      ON "appointments" ("doctorId", "date", "time")
-     WHERE "status" <> 'cancelled'`
+     WHERE "status" <> 'cancelled' AND "visitType" = 'scheduled'`
   );
   console.log('Database reset. Seeding sample data...');
 
