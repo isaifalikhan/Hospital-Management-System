@@ -201,9 +201,16 @@ async function seed() {
 
   // Backfill a couple weeks of appointments + invoices so the dashboard
   // trend charts have something meaningful to plot right out of the box.
+  // Built as arrays and bulk-inserted (3 round trips total) rather than
+  // creating each row one at a time -- ~230 sequential awaited queries
+  // against a remote DB took long enough to blow past Vercel's function
+  // timeout when this ran as the one-time /api/setup/seed request.
   const doctors = [drSarah, drAmit, drLisa, drJohn];
   const patients = [p1, p2, p3, p4, p5];
   let invoiceCounter = 3;
+  const backfillAppointments = [];
+  const backfillInvoices = [];
+  const backfillInvoiceMeta = []; // parallel to backfillInvoices: { doctor }
   for (let i = 13; i >= 2; i--) {
     const day = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
     const numEvents = 1 + ((i * 7) % 3); // deterministic pseudo-variety, 1-3 per day
@@ -211,7 +218,7 @@ async function seed() {
       const doctor = doctors[(i + j) % doctors.length];
       const patient = patients[(i + j * 2) % patients.length];
       const hour = 9 + ((i + j) % 7);
-      await Appointment.create({
+      backfillAppointments.push({
         patientId: patient.id,
         doctorId: doctor.id,
         date: day,
@@ -222,9 +229,8 @@ async function seed() {
 
       const fee = doctor.consultationFee || 100;
       invoiceCounter += 1;
-      const invNum = `INV${String(invoiceCounter).padStart(8, '0')}`;
-      const inv = await Invoice.create({
-        invoiceNumber: invNum,
+      backfillInvoices.push({
+        invoiceNumber: `INV${String(invoiceCounter).padStart(8, '0')}`,
         patientId: patient.id,
         date: day,
         subtotal: fee,
@@ -235,12 +241,19 @@ async function seed() {
         status: 'paid',
         paymentMethod: 'cash',
       });
-      await InvoiceItem.create({
-        invoiceId: inv.id, description: `${doctor.specialization || 'General'} consultation`,
-        category: 'consultation', quantity: 1, unitPrice: fee, amount: fee,
-      });
+      backfillInvoiceMeta.push({ doctor });
     }
   }
+  await Appointment.bulkCreate(backfillAppointments);
+  const createdInvoices = await Invoice.bulkCreate(backfillInvoices, { returning: true });
+  await InvoiceItem.bulkCreate(createdInvoices.map((inv, idx) => {
+    const { doctor } = backfillInvoiceMeta[idx];
+    const fee = doctor.consultationFee || 100;
+    return {
+      invoiceId: inv.id, description: `${doctor.specialization || 'General'} consultation`,
+      category: 'consultation', quantity: 1, unitPrice: fee, amount: fee,
+    };
+  }));
 
   await AuditLog.bulkCreate([
     { userName: 'Alex Admin', userRole: 'admin', action: 'create', entityType: 'Patient', entityId: p1.id, summary: `Registered patient ${p1.name} (${p1.mrn})` },

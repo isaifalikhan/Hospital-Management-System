@@ -2,7 +2,8 @@
   "buildCommand": "corepack enable && corepack prepare pnpm@11.5.0 --activate && corepack pnpm --version && corepack pnpm --dir backend install --prod && corepack pnpm --dir frontend install && corepack pnpm --dir frontend run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index" }
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "functions": {
     "api/index.js": { "maxDuration": 60 }
