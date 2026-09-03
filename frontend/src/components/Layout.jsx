@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, CalendarClock, Receipt, Pill,
   UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText,
-  DatabaseBackup, Clock, CalendarDays, LineChart, Ticket, PhoneCall,
+  DatabaseBackup, Clock, CalendarDays, LineChart, Ticket, PhoneCall, KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { authApi } from '../api';
+import Modal from './Modal';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
@@ -33,15 +36,49 @@ const roleColors = {
   pharmacist: 'bg-sky-100 text-sky-700',
 };
 
+const emptyPwForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user?.role));
 
+  const [pwModalOpen, setPwModalOpen] = useState(false);
+  const [pwForm, setPwForm] = useState(emptyPwForm);
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
+
   function handleLogout() {
     logout();
     navigate('/login');
+  }
+
+  function openPasswordModal() {
+    setPwForm(emptyPwForm);
+    setPwError('');
+    setPwModalOpen(true);
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPwError('');
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwError('New password and confirmation do not match');
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await authApi.changePassword({
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      });
+      setPwModalOpen(false);
+    } catch (err) {
+      setPwError(err.response?.data?.message || 'Failed to change password');
+    } finally {
+      setPwSaving(false);
+    }
   }
 
   return (
@@ -89,6 +126,9 @@ export default function Layout() {
               </span>
             </div>
           </div>
+          <button onClick={openPasswordModal} className="btn-secondary w-full mb-2">
+            <KeyRound size={16} /> Change Password
+          </button>
           <button onClick={handleLogout} className="btn-secondary w-full">
             <LogOut size={16} /> Log out
           </button>
@@ -100,6 +140,50 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      <Modal open={pwModalOpen} onClose={() => setPwModalOpen(false)} title="Change Password">
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          {pwError && (
+            <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{pwError}</p>
+          )}
+          <div>
+            <label className="label">Current Password *</label>
+            <input
+              required
+              type="password"
+              className="input"
+              value={pwForm.currentPassword}
+              onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="label">New Password *</label>
+            <input
+              required
+              type="password"
+              minLength={6}
+              className="input"
+              value={pwForm.newPassword}
+              onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })}
+            />
+            <p className="mt-1 text-xs text-slate-400">At least 6 characters.</p>
+          </div>
+          <div>
+            <label className="label">Confirm New Password *</label>
+            <input
+              required
+              type="password"
+              className="input"
+              value={pwForm.confirmPassword}
+              onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="btn-secondary" onClick={() => setPwModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={pwSaving}>{pwSaving ? 'Saving...' : 'Update Password'}</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
