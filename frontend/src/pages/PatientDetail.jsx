@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import {
   ArrowLeft, Plus, FileText, FlaskConical, BedDouble, Receipt, CalendarClock,
   Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer, Video, Sparkles,
@@ -13,7 +14,22 @@ import SignaturePad from '../components/SignaturePad';
 import DischargeModal from '../components/DischargeModal';
 import AttachmentList from '../components/AttachmentList';
 
-const emptyRecord = { diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '', signatureData: null };
+const emptyRecord = {
+  diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '', signatureData: null,
+  bpSystolic: '', bpDiastolic: '', temperature: '', pulse: '', weight: '',
+};
+
+// Shared by the visit list, the print/view modal, and the AI summary prompt
+// so all three describe a record's vitals the same way.
+function formatVitals(r) {
+  const parts = [];
+  if (r.bpSystolic && r.bpDiastolic) parts.push(`BP ${r.bpSystolic}/${r.bpDiastolic}`);
+  if (r.temperature) parts.push(`Temp ${r.temperature}°F`);
+  if (r.pulse) parts.push(`Pulse ${r.pulse} bpm`);
+  if (r.weight) parts.push(`Weight ${r.weight} lbs`);
+  if (r.vitals) parts.push(r.vitals);
+  return parts.join(' · ');
+}
 const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
 const emptyLabOrder = { testName: '', priority: 'routine', notes: '' };
 const emptyAdmission = { ward: '', bedNumber: '', reason: '' };
@@ -111,6 +127,11 @@ export default function PatientDetail() {
     try {
       const res = await medicalRecordsApi.create({
         ...recordForm,
+        bpSystolic: recordForm.bpSystolic ? Number(recordForm.bpSystolic) : null,
+        bpDiastolic: recordForm.bpDiastolic ? Number(recordForm.bpDiastolic) : null,
+        temperature: recordForm.temperature ? Number(recordForm.temperature) : null,
+        pulse: recordForm.pulse ? Number(recordForm.pulse) : null,
+        weight: recordForm.weight ? Number(recordForm.weight) : null,
         patientId: id,
         prescriptionItems: prescriptionItems
           .filter((it) => it.medicineName.trim())
@@ -139,7 +160,7 @@ export default function PatientDetail() {
         fields: {
           Diagnosis: recordForm.diagnosis,
           Treatment: recordForm.treatment,
-          Vitals: recordForm.vitals,
+          Vitals: formatVitals(recordForm),
         },
       });
       setRecordForm((f) => ({ ...f, notes: res.data.summary }));
@@ -249,6 +270,16 @@ export default function PatientDetail() {
   if (!patient) return <div className="text-slate-500">Loading...</div>;
 
   const age = patient.dob ? Math.floor((Date.now() - new Date(patient.dob)) / 3.15576e10) : null;
+
+  const vitalsTrend = (patient.MedicalRecords || [])
+    .slice()
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map((r) => ({
+      date: r.date,
+      bpSystolic: r.bpSystolic, bpDiastolic: r.bpDiastolic,
+      temperature: r.temperature, pulse: r.pulse, weight: r.weight,
+    }));
+  const hasVitalsTrend = vitalsTrend.some((v) => v.bpSystolic || v.temperature || v.pulse || v.weight);
 
   // Build a unified, chronological timeline from every clinical event we have.
   const timelineEvents = [
@@ -414,6 +445,63 @@ export default function PatientDetail() {
           <Link to="/billing" className="mt-2 inline-block text-sm text-indigo-600 hover:underline">Go to Billing</Link>
         </div>
 
+        {hasVitalsTrend && (
+          <div className="card p-5 lg:col-span-3">
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">Vitals Trend</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="mb-1 text-xs font-medium text-slate-500">Blood Pressure</p>
+                <ResponsiveContainer width="100%" height={140}>
+                  <LineChart data={vitalsTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="bpSystolic" name="Systolic" stroke="#6366f1" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    <Line type="monotone" dataKey="bpDiastolic" name="Diastolic" stroke="#f43f5e" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-medium text-slate-500">Temperature (°F)</p>
+                <ResponsiveContainer width="100%" height={140}>
+                  <LineChart data={vitalsTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={28} domain={['dataMin - 1', 'dataMax + 1']} />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-medium text-slate-500">Pulse (bpm)</p>
+                <ResponsiveContainer width="100%" height={140}>
+                  <LineChart data={vitalsTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="pulse" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-medium text-slate-500">Weight (lbs)</p>
+                <ResponsiveContainer width="100%" height={140}>
+                  <LineChart data={vitalsTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={28} domain={['dataMin - 2', 'dataMax + 2']} />
+                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="card p-5 lg:col-span-3">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Medical Records &amp; Prescriptions</h2>
@@ -436,7 +524,7 @@ export default function PatientDetail() {
                       </button>
                     </div>
                   </div>
-                  {r.vitals && <p className="text-xs text-slate-500 mb-1">Vitals: {r.vitals}</p>}
+                  {formatVitals(r) && <p className="text-xs text-slate-500 mb-1">Vitals: {formatVitals(r)}</p>}
                   <p><span className="font-medium">Diagnosis:</span> {r.diagnosis || '—'}</p>
                   {r.treatment && <p><span className="font-medium">Treatment:</span> {r.treatment}</p>}
                   {r.prescription && <p><span className="font-medium">Notes on prescription:</span> {r.prescription}</p>}
@@ -595,7 +683,22 @@ export default function PatientDetail() {
         <form onSubmit={handleAddRecord} className="space-y-4">
           <div>
             <label className="label">Vitals</label>
-            <input className="input" value={recordForm.vitals} onChange={(e) => setRecordForm({ ...recordForm, vitals: e.target.value })} placeholder="e.g. BP:120/80, Temp:98.6F, Pulse:72" />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="col-span-2 flex items-center gap-1">
+                <input type="number" className="input" placeholder="Systolic" value={recordForm.bpSystolic} onChange={(e) => setRecordForm({ ...recordForm, bpSystolic: e.target.value })} />
+                <span className="text-slate-400">/</span>
+                <input type="number" className="input" placeholder="Diastolic" value={recordForm.bpDiastolic} onChange={(e) => setRecordForm({ ...recordForm, bpDiastolic: e.target.value })} />
+              </div>
+              <input type="number" step="0.1" className="input" placeholder="Temp (°F)" value={recordForm.temperature} onChange={(e) => setRecordForm({ ...recordForm, temperature: e.target.value })} />
+              <input type="number" className="input" placeholder="Pulse (bpm)" value={recordForm.pulse} onChange={(e) => setRecordForm({ ...recordForm, pulse: e.target.value })} />
+              <input type="number" step="0.1" className="input" placeholder="Weight (lbs)" value={recordForm.weight} onChange={(e) => setRecordForm({ ...recordForm, weight: e.target.value })} />
+            </div>
+            <input
+              className="input mt-2"
+              value={recordForm.vitals}
+              onChange={(e) => setRecordForm({ ...recordForm, vitals: e.target.value })}
+              placeholder="Other vitals or notes (e.g. SpO2, respiratory rate)"
+            />
           </div>
           <div>
             <label className="label">Diagnosis</label>
@@ -644,7 +747,7 @@ export default function PatientDetail() {
               <button
                 type="button"
                 onClick={handleGenerateNotes}
-                disabled={generatingNotes || (!recordForm.diagnosis && !recordForm.treatment && !recordForm.vitals)}
+                disabled={generatingNotes || (!recordForm.diagnosis && !recordForm.treatment && !formatVitals(recordForm))}
                 className="flex items-center gap-1 text-xs text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
                 title="Draft notes from the diagnosis/treatment/vitals above — review before saving"
               >
@@ -767,7 +870,7 @@ export default function PatientDetail() {
               </button>
             </div>
             <dl className="space-y-2 text-sm">
-              {viewRecord.vitals && <div className="flex justify-between gap-3"><dt className="text-slate-500">Vitals</dt><dd className="text-slate-800">{viewRecord.vitals}</dd></div>}
+              {formatVitals(viewRecord) && <div className="flex justify-between gap-3"><dt className="text-slate-500">Vitals</dt><dd className="text-slate-800">{formatVitals(viewRecord)}</dd></div>}
               <div><dt className="mb-1 text-slate-500">Diagnosis</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.diagnosis || '—'}</dd></div>
               {viewRecord.treatment && <div><dt className="mb-1 text-slate-500">Treatment</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.treatment}</dd></div>}
               {viewRecord.prescription && <div><dt className="mb-1 text-slate-500">Prescription Notes</dt><dd className="whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-slate-800">{viewRecord.prescription}</dd></div>}

@@ -8,7 +8,12 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
   treatment: { type: DataTypes.TEXT, allowNull: true },
   prescription: { type: DataTypes.TEXT, allowNull: true },
   notes: { type: DataTypes.TEXT, allowNull: true },
-  vitals: { type: DataTypes.STRING, allowNull: true }, // e.g. "BP:120/80, Temp:98.6F, Pulse:72"
+  vitals: { type: DataTypes.STRING, allowNull: true }, // free-text catch-all for anything not covered below
+  bpSystolic: { type: DataTypes.INTEGER, allowNull: true },
+  bpDiastolic: { type: DataTypes.INTEGER, allowNull: true },
+  temperature: { type: DataTypes.FLOAT, allowNull: true }, // Fahrenheit
+  pulse: { type: DataTypes.INTEGER, allowNull: true }, // beats per minute
+  weight: { type: DataTypes.FLOAT, allowNull: true }, // pounds
   signatureData: { type: DataTypes.TEXT, allowNull: true }, // base64 PNG of the doctor's e-signature
 }, {
   tableName: 'medical_records',
