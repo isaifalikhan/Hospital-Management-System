@@ -10,15 +10,13 @@ const DEMO_ACCOUNTS = [
   { role: 'Pharmacist', username: 'pharmacist' },
 ];
 
-// One-click self-service login as Admin/Doctor/Receptionist/Pharmacist is
-// fine for a local demo, but a real liability on a deployed site — anyone
-// who finds the URL gets full admin access with zero friction. Shown only
-// while running the actual Vite dev server (`import.meta.env.DEV`), never
-// in a built bundle (Vercel or any other production deploy), unless
-// explicitly re-enabled with VITE_SHOW_DEMO_ACCOUNTS=true at build time.
-// Hiding this button is not a substitute for rotating the demo accounts'
-// passwords on a live deployment — see README's "Deploying" section.
-const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true';
+// Shown on every build, local and deployed — the owner explicitly wants the
+// one-click demo login visible on the live site (revisit if that changes).
+// It's still a real liability if the demo accounts' passwords are never
+// rotated: password123 for admin/sjohnson/reception/pharmacist is written
+// in this repo's public README regardless of whether this panel is shown —
+// see the "Deploying" section for changing/deleting them.
+const SHOW_DEMO_ACCOUNTS = true;
 
 export default function Login() {
   const { login } = useAuth();

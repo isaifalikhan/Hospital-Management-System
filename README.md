@@ -179,12 +179,12 @@ All seeded accounts use the password `password123`.
 | Receptionist | `reception`   |
 | Pharmacist   | `pharmacist`  |
 
-The login screen also has one-click buttons to fill in each demo account — but only while
-running the Vite dev server (`import.meta.env.DEV`). A production build (Vercel or any other
-deploy) never renders that panel or ships the `password123` string in its JS bundle, since
-handing out working admin/doctor/receptionist/pharmacist logins to anyone who finds the URL
-is a real liability, not a demo convenience, once the app is live. **Hiding the button does
-not revoke the accounts** — see the next section.
+The login screen also has one-click buttons to fill in each demo account, shown on every
+build including the deployed site — an explicit choice by this project's owner, not a
+default worth copying without thinking about it: it hands out working admin/doctor/
+receptionist/pharmacist logins to anyone who finds the URL. If you'd rather not do that,
+change/delete the demo accounts (next section) and remove the panel from
+`frontend/src/pages/Login.jsx` (`SHOW_DEMO_ACCOUNTS`).
 
 ## Resetting sample data
 
@@ -227,10 +227,10 @@ use:
 1. Set a strong, random `JWT_SECRET` in `backend/.env`.
 2. **Change every demo account's password** (`admin`, `sjohnson`, `reception`, `pharmacist` —
    all `password123` out of the box) from Staff Users once you have your own admin login, or
-   delete those accounts outright. The production build already hides the one-click login
-   panel (see Demo login credentials above), but the accounts themselves still work with the
-   password published in this README until you change them — that's a real login, not a UI
-   convenience, and this repo being public means that password is public too.
+   delete those accounts outright. The login page's one-click demo buttons are shown by
+   default (see Demo login credentials above) — until you change these passwords, that's a
+   real login handed to anyone who visits the site, not just a UI convenience, and this repo
+   being public means the password is public too even if you do hide the buttons.
 3. Consider swapping SQLite for PostgreSQL/MySQL for concurrent multi-user production loads
    (Sequelize makes this a config change in `backend/config/db.js`, not a rewrite).
 4. Build the frontend for production with `npm run build` in `frontend/` and serve the
