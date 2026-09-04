@@ -3,9 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import {
   ArrowLeft, Plus, FileText, FlaskConical, BedDouble, Receipt, CalendarClock,
-  Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer, Video, Sparkles,
+  Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer, Video, Sparkles, Syringe,
 } from 'lucide-react';
-import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi, aiApi } from '../api';
+import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi, aiApi, immunizationsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -33,6 +33,7 @@ function formatVitals(r) {
 const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
 const emptyLabOrder = { testName: '', priority: 'routine', notes: '' };
 const emptyAdmission = { ward: '', bedNumber: '', reason: '' };
+const emptyImmunization = { vaccineName: '', doseNumber: '', dateGiven: '', nextDueDate: '', administeredBy: '', batchNumber: '', notes: '' };
 
 export default function PatientDetail() {
   const { id } = useParams();
@@ -64,6 +65,10 @@ export default function PatientDetail() {
   const [dischargeTarget, setDischargeTarget] = useState(null);
   const [viewAdmission, setViewAdmission] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
+
+  const [immModalOpen, setImmModalOpen] = useState(false);
+  const [immForm, setImmForm] = useState(emptyImmunization);
+  const [savingImm, setSavingImm] = useState(false);
 
   const [showTimeline, setShowTimeline] = useState(true);
 
@@ -250,6 +255,41 @@ export default function PatientDetail() {
     return res.data.summary;
   }
 
+  // --- Immunizations ---
+  function openImmunizationModal() {
+    setImmForm(emptyImmunization);
+    setImmModalOpen(true);
+  }
+
+  async function handleAddImmunization(e) {
+    e.preventDefault();
+    setSavingImm(true);
+    try {
+      await immunizationsApi.create({
+        ...immForm,
+        patientId: id,
+        doseNumber: immForm.doseNumber ? Number(immForm.doseNumber) : null,
+        nextDueDate: immForm.nextDueDate || null,
+      });
+      setImmModalOpen(false);
+      await load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to record immunization');
+    } finally {
+      setSavingImm(false);
+    }
+  }
+
+  async function handleDeleteImmunization(immId) {
+    if (!confirm('Remove this immunization record?')) return;
+    try {
+      await immunizationsApi.remove(immId);
+      await load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete immunization record');
+    }
+  }
+
   // --- Patient portal access ---
   async function handleSetPin(e) {
     e.preventDefault();
@@ -305,7 +345,16 @@ export default function PatientDetail() {
       date: inv.date, type: 'invoice', icon: Receipt, tone: 'text-rose-600 bg-rose-50',
       title: `Invoice ${inv.invoiceNumber}`, detail: `$${Number(inv.total).toFixed(2)}`, status: inv.status,
     })),
+    ...(patient.Immunizations || []).map((v) => ({
+      date: v.dateGiven, type: 'immunization', icon: Syringe, tone: 'text-teal-600 bg-teal-50',
+      title: `${v.vaccineName}${v.doseNumber ? ` (dose ${v.doseNumber})` : ''}`,
+      detail: v.administeredBy ? `Given by ${v.administeredBy}` : '',
+    })),
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const upcomingImmunizations = (patient.Immunizations || [])
+    .filter((v) => v.nextDueDate && new Date(v.nextDueDate) >= new Date(new Date().toISOString().slice(0, 10)))
+    .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
 
   return (
     <div>
@@ -677,6 +726,50 @@ export default function PatientDetail() {
             <p className="text-sm text-slate-500">No admission history.</p>
           )}
         </div>
+
+        <div className="card p-5 lg:col-span-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Immunizations</h2>
+            {canAddRecord && (
+              <button className="btn-primary" onClick={openImmunizationModal}>
+                <Plus size={16} /> Add Immunization
+              </button>
+            )}
+          </div>
+          {upcomingImmunizations.length > 0 && (
+            <p className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              Next due: {upcomingImmunizations.map((v) => `${v.vaccineName} on ${v.nextDueDate}`).join(' · ')}
+            </p>
+          )}
+          {patient.Immunizations?.length ? (
+            <ul className="divide-y divide-slate-100">
+              {patient.Immunizations
+                .slice()
+                .sort((a, b) => new Date(b.dateGiven) - new Date(a.dateGiven))
+                .map((v) => (
+                  <li key={v.id} className="py-2.5 text-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-slate-800 flex items-center gap-1.5">
+                        <Syringe size={14} /> {v.vaccineName}{v.doseNumber ? ` — dose ${v.doseNumber}` : ''}
+                      </p>
+                      {canAddRecord && (
+                        <button onClick={() => handleDeleteImmunization(v.id)} className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600" title="Delete">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Given {v.dateGiven}{v.administeredBy ? ` by ${v.administeredBy}` : ''}{v.batchNumber ? ` · Batch ${v.batchNumber}` : ''}
+                    </p>
+                    {v.nextDueDate && <p className="text-xs text-amber-600">Next due {v.nextDueDate}</p>}
+                    {v.notes && <p className="text-xs text-slate-500 mt-0.5">{v.notes}</p>}
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-500">No immunization records yet.</p>
+          )}
+        </div>
       </div>
 
       <Modal open={recordModalOpen} onClose={() => setRecordModalOpen(false)} title="Add Medical Record" wide>
@@ -808,6 +901,47 @@ export default function PatientDetail() {
           <div className="flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={() => setAdmitModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={savingAdmit}>{savingAdmit ? 'Admitting...' : 'Admit Patient'}</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={immModalOpen} onClose={() => setImmModalOpen(false)} title="Add Immunization">
+        <form onSubmit={handleAddImmunization} className="space-y-4">
+          <div>
+            <label className="label">Vaccine *</label>
+            <input required className="input" value={immForm.vaccineName} onChange={(e) => setImmForm({ ...immForm, vaccineName: e.target.value })} placeholder="e.g. Influenza, Tetanus, COVID-19" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Dose Number</label>
+              <input type="number" min="1" className="input" value={immForm.doseNumber} onChange={(e) => setImmForm({ ...immForm, doseNumber: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Date Given *</label>
+              <input required type="date" className="input" value={immForm.dateGiven} onChange={(e) => setImmForm({ ...immForm, dateGiven: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Next Due Date</label>
+              <input type="date" className="input" value={immForm.nextDueDate} onChange={(e) => setImmForm({ ...immForm, nextDueDate: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Batch Number</label>
+              <input className="input" value={immForm.batchNumber} onChange={(e) => setImmForm({ ...immForm, batchNumber: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <label className="label">Administered By</label>
+            <input className="input" value={immForm.administeredBy} onChange={(e) => setImmForm({ ...immForm, administeredBy: e.target.value })} placeholder="e.g. Nurse Patel" />
+          </div>
+          <div>
+            <label className="label">Notes</label>
+            <textarea className="input" rows={2} value={immForm.notes} onChange={(e) => setImmForm({ ...immForm, notes: e.target.value })} placeholder="Any reactions or special notes" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="btn-secondary" onClick={() => setImmModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn-primary" disabled={savingImm}>{savingImm ? 'Saving...' : 'Save Immunization'}</button>
           </div>
         </form>
       </Modal>

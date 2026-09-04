@@ -19,6 +19,19 @@ const userValidators = {
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('role').isIn(['admin', 'doctor', 'receptionist', 'pharmacist']).withMessage('Invalid role'),
     body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
+    // Optional — only meaningful when role === 'doctor'. userController.create
+    // uses these to also create (or, via doctorId, link) a Doctor profile in
+    // the same request, so a new doctor account is immediately bookable
+    // rather than just able to log in with no clinical profile.
+    body('doctorId').optional({ values: 'falsy' }).isInt().withMessage('A valid doctorId is required to link an existing doctor profile'),
+    body('specialization').optional({ values: 'falsy' }).trim().isString(),
+    body('qualification').optional({ values: 'falsy' }).trim().isString(),
+    body('departmentId').optional({ values: 'falsy' }).isInt().withMessage('A valid departmentId is required'),
+    body('consultationFee').optional({ values: 'falsy' }).isFloat({ min: 0 }).withMessage('Consultation fee must be a positive number'),
+    body('phone').optional({ values: 'falsy' }).trim().isString(),
+    body('availableTime').optional({ values: 'falsy' }).matches(/^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/)
+      .withMessage('availableTime must be in "HH:MM-HH:MM" format, e.g. "09:00-17:00"'),
+    body('availableDays').optional({ values: 'falsy' }).custom((value) => validAvailableDays(value)),
   ],
   update: [
     body('role').optional().isIn(['admin', 'doctor', 'receptionist', 'pharmacist']).withMessage('Invalid role'),
@@ -184,6 +197,22 @@ const medicalRecordValidators = {
   ],
 };
 
+const immunizationValidators = {
+  create: [
+    body('patientId').isInt().withMessage('A valid patientId is required'),
+    body('vaccineName').trim().notEmpty().withMessage('Vaccine name is required'),
+    body('dateGiven').isISO8601().withMessage('A valid date given (YYYY-MM-DD) is required'),
+    body('doseNumber').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Dose number must be a positive integer'),
+    body('nextDueDate').optional({ values: 'falsy' }).isISO8601().withMessage('nextDueDate must be a valid date (YYYY-MM-DD)'),
+  ],
+  update: [
+    body('vaccineName').optional().trim().notEmpty().withMessage('Vaccine name cannot be empty'),
+    body('dateGiven').optional().isISO8601().withMessage('A valid date given (YYYY-MM-DD) is required'),
+    body('doseNumber').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Dose number must be a positive integer'),
+    body('nextDueDate').optional({ values: 'falsy' }).isISO8601().withMessage('nextDueDate must be a valid date (YYYY-MM-DD)'),
+  ],
+};
+
 const dashboardValidators = {
   ownerInsights: [
     query('startDate').optional({ values: 'falsy' }).isISO8601().withMessage('startDate must be a valid date (YYYY-MM-DD)'),
@@ -228,6 +257,7 @@ module.exports = {
   labOrderValidators,
   shiftValidators,
   medicalRecordValidators,
+  immunizationValidators,
   dashboardValidators,
   publicValidators,
   patientPortalValidators,

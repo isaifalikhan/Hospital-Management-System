@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { Patient, Appointment, MedicalRecord, Invoice, Doctor, LabOrder, Admission, PrescriptionItem } = require('../models');
+const { Patient, Appointment, MedicalRecord, Invoice, Doctor, LabOrder, Admission, PrescriptionItem, Immunization } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
 const { searchOp } = require('../utils/search');
@@ -49,6 +49,7 @@ exports.get = async (req, res, next) => {
         { model: Invoice },
         { model: LabOrder, include: [{ model: Doctor, attributes: ['id', 'name'] }] },
         { model: Admission, include: [{ model: Doctor, attributes: ['id', 'name'] }] },
+        { model: Immunization },
       ],
     });
     if (!patient) return res.status(404).json({ message: 'Patient not found' });

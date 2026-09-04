@@ -17,6 +17,7 @@ const AuditLog = require('./AuditLog');
 const StaffAttendance = require('./StaffAttendance');
 const Shift = require('./Shift');
 const Attachment = require('./Attachment');
+const Immunization = require('./Immunization');
 
 // User <-> Doctor (a doctor may have a login account)
 User.hasOne(Doctor, { foreignKey: 'userId', onDelete: 'SET NULL' });
@@ -77,6 +78,10 @@ Admission.belongsTo(Patient, { foreignKey: 'patientId' });
 Doctor.hasMany(Admission, { foreignKey: 'doctorId', onDelete: 'SET NULL' });
 Admission.belongsTo(Doctor, { foreignKey: 'doctorId' });
 
+// Patient <-> Immunization
+Patient.hasMany(Immunization, { foreignKey: 'patientId', onDelete: 'CASCADE' });
+Immunization.belongsTo(Patient, { foreignKey: 'patientId' });
+
 // User <-> StaffAttendance (clock-in/out log)
 User.hasMany(StaffAttendance, { foreignKey: 'userId', onDelete: 'CASCADE' });
 StaffAttendance.belongsTo(User, { foreignKey: 'userId' });
@@ -104,4 +109,5 @@ module.exports = {
   StaffAttendance,
   Shift,
   Attachment,
+  Immunization,
 };

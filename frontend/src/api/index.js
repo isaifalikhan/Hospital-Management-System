@@ -63,6 +63,13 @@ export const labOrdersApi = {
   remove: (id) => client.delete(`/lab-orders/${id}`),
 };
 
+export const immunizationsApi = {
+  list: (params) => client.get('/immunizations', { params }),
+  create: (data) => client.post('/immunizations', data),
+  update: (id, data) => client.put(`/immunizations/${id}`, data),
+  remove: (id) => client.delete(`/immunizations/${id}`),
+};
+
 export const admissionsApi = {
   list: (params) => client.get('/admissions', { params }),
   create: (data) => client.post('/admissions', data),
