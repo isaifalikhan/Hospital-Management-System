@@ -10,7 +10,8 @@ on the frontend, with JWT authentication and role-based access control.
 
 - **Authentication & Roles** — Admin, Doctor, Receptionist, and Pharmacist accounts, each
   seeing only the modules relevant to their role. Login is rate-limited and the server
-  fails fast with a clear error if `JWT_SECRET` isn't configured.
+  fails fast with a clear error if `JWT_SECRET` isn't configured. Any logged-in user can
+  change their own password from the sidebar.
 - **Staff Account Creation** — Admins create login accounts for every role from the Staff
   Users page. Creating a **doctor** account also creates (or links to an existing,
   login-less) clinical profile in the same step — specialization, department, consultation
@@ -26,9 +27,17 @@ on the frontend, with JWT authentication and role-based access control.
   picker driven by each doctor's configured availability. Export to CSV.
 - **Doctor & Department Management** — Manage doctor profiles, specializations, consultation
   fees, availability, and organize doctors into departments.
-- **Medical Records & Prescriptions** — Doctors log diagnoses, treatments, vitals, and
-  structured line-item prescriptions tied to a patient visit; pharmacists dispense each
-  prescription item, which deducts stock from inventory automatically.
+- **Medical Records & Prescriptions** — Doctors log diagnoses, treatments, structured
+  vitals (BP, temperature, pulse, weight), and structured line-item prescriptions tied to
+  a patient visit; pharmacists dispense each prescription item, which deducts stock from
+  inventory automatically. A Vitals Trend chart on the patient chart plots BP/temperature/
+  pulse over every recorded visit.
+- **Immunization Tracking** — Log vaccines given per patient (dose number, batch, who
+  administered it, next-due date) from the patient chart, alongside the rest of their
+  clinical history.
+- **File & Image Attachments** — Attach files (lab reports, scans, photos) to a medical
+  record, lab order, or admission, stored directly in the database — no external storage
+  needed. Viewable and downloadable from wherever that record is shown.
 - **Lab Orders** — Order lab tests for a patient, track status (ordered → in progress →
   completed), flag urgent priority, and record results — both from the patient chart and
   from a hospital-wide Lab Orders queue.
@@ -222,6 +231,14 @@ use:
    Vercel's free/Hobby tier historically limits how often a cron job actually fires (daily,
    not every 15 minutes); check your plan's current cron limits and adjust the schedule in
    `vercel.json` if needed.
+6. First-time setup on a fresh hosted database (e.g. a new Vercel Postgres instance): set
+   `SETUP_SECRET`, then hit `GET /api/setup/seed?secret=...` once to create the schema and
+   demo accounts (refuses to run if any user already exists, unless `&force=true`). Remove
+   `SETUP_SECRET` and delete `backend/routes/setupRoutes.js` once you're past the demo stage.
+7. When you're ready to move a deployment from demo data to real use, run
+   `node backend/utils/clearDemoData.js` (needs the same DB env vars as the server) — it
+   deletes all clinical/business data (patients, appointments, records, invoices, medicines,
+   etc.) but leaves the `users` table untouched, so existing logins keep working.
 
 ## API Overview
 
@@ -238,6 +255,10 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET/POST/PUT/DELETE /api/medical-records`, `POST /api/medical-records/prescription-items/:itemId/dispense`
 - `GET /api/doctors/:id/available-slots?date=YYYY-MM-DD`
 - `GET/POST/PUT/DELETE /api/lab-orders`
+- `GET/POST/PUT/DELETE /api/immunizations`
+- `GET /api/attachments?entityType=&entityId=`, `POST /api/attachments` (multipart upload),
+  `GET /api/attachments/:id/file`, `DELETE /api/attachments/:id` — `entityType` is one of
+  `MedicalRecord`, `LabOrder`, `Admission`
 - `GET/POST/PUT/DELETE /api/admissions`, `POST /api/admissions/:id/discharge`
 - `GET/POST/PUT/DELETE /api/invoices`, `POST /api/invoices/:id/payments`
 - `GET/POST/PUT/DELETE /api/medicines`, `POST /api/medicines/:id/stock`
@@ -265,6 +286,9 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET /api/cron/reminders` — no JWT; requires `Authorization: Bearer <CRON_SECRET>` instead.
   Runs the same reminder logic as the local scheduler; meant to be called by Vercel Cron, not
   the frontend. Returns 501 if `CRON_SECRET` isn't configured.
+- `GET /api/setup/seed?secret=<SETUP_SECRET>` — one-time hosted-DB bootstrap, see Deploying
+  above. Returns 501 if `SETUP_SECRET` isn't configured, 409 if the database isn't empty
+  (unless `&force=true`).
 - `PUT /api/patients/:id/portal-pin` (admin/receptionist — sets a patient's portal login PIN)
 - `POST /api/ai/summary` (admin/doctor/receptionist — drafts a summary from structured
   fields; see AI-Assisted Note Drafting above)
