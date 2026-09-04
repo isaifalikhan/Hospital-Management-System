@@ -33,6 +33,7 @@ const shiftRoutes = require('./routes/shiftRoutes');
 const backupRoutes = require('./routes/backupRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const { startReminderScheduler } = require('./utils/reminderScheduler');
+const { startAlertScheduler } = require('./utils/alertDigest');
 const patientPortalRoutes = require('./routes/patientPortalRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const cronRoutes = require('./routes/cronRoutes');
@@ -154,6 +155,7 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);
       startReminderScheduler();
+      startAlertScheduler();
     });
   } catch (err) {
     console.error('Failed to start server:', err);

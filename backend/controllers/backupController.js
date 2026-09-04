@@ -4,6 +4,7 @@ const path = require('path');
 const sequelize = require('../config/db');
 const { sequelize: _sequelize, ...models } = require('../models');
 const { logAudit } = require('../utils/audit');
+const { sendAlertDigest } = require('../utils/alertDigest');
 
 // Same check backend/config/db.js uses to pick a dialect: a connection string
 // means hosted Postgres, its absence means the local/LAN SQLite file.
@@ -75,6 +76,24 @@ exports.download = async (req, res, next) => {
     } else {
       await exportSqliteFile(req, res, next);
     }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Manual trigger for the same daily digest the scheduler/cron send
+// automatically — mainly for testing, or for an admin who wants today's
+// picture right now rather than waiting for the schedule.
+exports.sendAlertDigestNow = async (req, res, next) => {
+  try {
+    const result = await sendAlertDigest();
+    await logAudit(req, {
+      action: 'create', entityType: 'AlertDigest',
+      summary: result.sent
+        ? `Sent alert digest to ${result.sentTo} admin(s): ${result.lowStockCount} low stock, ${result.overdueCount} overdue invoice(s)`
+        : `Alert digest not sent: ${result.reason}`,
+    });
+    res.json(result);
   } catch (err) {
     next(err);
   }

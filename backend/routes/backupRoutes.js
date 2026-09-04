@@ -8,5 +8,6 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.use(authenticate, authorize('admin'));
 
 router.get('/backup', backupController.download);
+router.post('/alert-digest', backupController.sendAlertDigestNow);
 
 module.exports = router;

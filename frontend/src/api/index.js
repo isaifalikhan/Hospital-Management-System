@@ -151,6 +151,9 @@ export const adminApi = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+  // Same digest the daily scheduler/cron send automatically -- triggers it
+  // immediately instead of waiting for the schedule.
+  sendAlertDigestNow: () => client.post('/admin/alert-digest'),
 };
 
 export const usersApi = {

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { sendDueReminders } = require('../utils/reminderScheduler');
+const { sendAlertDigest } = require('../utils/alertDigest');
 
 // Triggered by Vercel Cron (see the "crons" entry in vercel.json) on a
 // schedule, since a stateless serverless deployment can't keep the
@@ -23,6 +24,19 @@ router.get('/reminders', async (req, res) => {
   }
   await sendDueReminders();
   res.json({ message: 'Reminders processed' });
+});
+
+// Same CRON_SECRET gate as /reminders above.
+router.get('/alerts', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    return res.status(501).json({ message: 'CRON_SECRET is not configured — set it in the environment to enable this endpoint.' });
+  }
+  if (req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  const result = await sendAlertDigest();
+  res.json(result);
 });
 
 module.exports = router;
