@@ -5,10 +5,14 @@ const scheduling = require('../utils/scheduling');
 
 exports.list = async (req, res, next) => {
   try {
-    const { search, departmentId, status } = req.query;
+    const { search, departmentId, status, unlinked } = req.query;
     const where = {};
     if (status) where.status = status;
     if (departmentId) where.departmentId = departmentId;
+    // Doctor profiles with no linked User account yet — used by the "link
+    // to existing doctor profile" option when creating a doctor's login
+    // (see userController.create, StaffUsers.jsx).
+    if (unlinked === 'true') where.userId = null;
 
     if (search) {
       where.name = { [searchOp]: `%${search}%` };

@@ -11,6 +11,12 @@ on the frontend, with JWT authentication and role-based access control.
 - **Authentication & Roles** — Admin, Doctor, Receptionist, and Pharmacist accounts, each
   seeing only the modules relevant to their role. Login is rate-limited and the server
   fails fast with a clear error if `JWT_SECRET` isn't configured.
+- **Staff Account Creation** — Admins create login accounts for every role from the Staff
+  Users page. Creating a **doctor** account also creates (or links to an existing,
+  login-less) clinical profile in the same step — specialization, department, consultation
+  fee, availability — so the new doctor is immediately bookable everywhere doctors are
+  selectable (Check-In, Appointments, public booking, the patient portal), not just able
+  to log in.
 - **Patient Management** — Register patients, search by name/MRN/phone, view full patient
   profiles including a unified visit timeline (appointments, records, lab orders,
   admissions, invoices), medical records, lab orders, admissions, and invoices. Export
@@ -235,7 +241,11 @@ All endpoints are prefixed with `/api` and (except `/auth/login`) require a
 - `GET/POST/PUT/DELETE /api/admissions`, `POST /api/admissions/:id/discharge`
 - `GET/POST/PUT/DELETE /api/invoices`, `POST /api/invoices/:id/payments`
 - `GET/POST/PUT/DELETE /api/medicines`, `POST /api/medicines/:id/stock`
-- `GET/POST/PUT/DELETE /api/users` (admin only)
+- `GET/POST/PUT/DELETE /api/users` (admin only) — `POST` with `role: 'doctor'` also creates
+  or links a Doctor profile; pass `doctorId` to link an existing unlinked profile, or
+  `specialization`/`departmentId`/`consultationFee`/`phone`/`availableDays`/`availableTime`
+  to create a new one
+- `GET /api/doctors?unlinked=true` — doctor profiles with no linked login yet
 - `GET /api/dashboard/summary`, `GET /api/dashboard/analytics`
 - `GET /api/audit-logs` (admin only)
 - `GET /api/reports/patients.csv`, `/api/reports/appointments.csv`, `/api/reports/invoices.csv`
