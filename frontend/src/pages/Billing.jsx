@@ -147,6 +147,7 @@ export default function Billing() {
       </div>
 
       <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
             <tr>
@@ -181,6 +182,7 @@ export default function Billing() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New Invoice" wide>
@@ -254,7 +256,7 @@ export default function Billing() {
       <Modal open={!!viewInvoice} onClose={() => setViewInvoice(null)} title={viewInvoice ? `Invoice ${viewInvoice.invoiceNumber}` : ''} wide>
         {viewInvoice && (
           <div id="invoice-print-area">
-            <div className="mb-4 flex items-center justify-between print:mb-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:mb-6">
               <div>
                 <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS</p>
                 <p className="font-medium text-slate-900">{viewInvoice.Patient?.name}</p>
@@ -268,6 +270,7 @@ export default function Billing() {
               </div>
             </div>
 
+            <div className="overflow-x-auto">
             <table className="w-full text-sm mb-4">
               <thead className="text-left text-xs uppercase text-slate-500 border-b border-slate-200">
                 <tr>
@@ -290,6 +293,7 @@ export default function Billing() {
                 ))}
               </tbody>
             </table>
+            </div>
 
             <div className="rounded-lg bg-slate-50 p-3 text-sm mb-4 sm:w-1/2 sm:ml-auto">
               <div className="flex justify-between"><span>Subtotal</span><span>${Number(viewInvoice.subtotal).toFixed(2)}</span></div>

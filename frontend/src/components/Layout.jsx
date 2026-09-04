@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, Stethoscope, CalendarClock, Receipt, Pill,
   UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText,
   DatabaseBackup, Clock, CalendarDays, LineChart, Ticket, PhoneCall, KeyRound,
+  Menu, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api';
@@ -44,6 +45,7 @@ export default function Layout() {
 
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user?.role));
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pwModalOpen, setPwModalOpen] = useState(false);
   const [pwForm, setPwForm] = useState(emptyPwForm);
   const [pwSaving, setPwSaving] = useState(false);
@@ -83,15 +85,35 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-slate-50">
-      <aside className="flex w-64 flex-col border-r border-slate-200 bg-white">
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-slate-200">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
-            <HeartPulse size={20} />
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : ''
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2 px-5 py-5 border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+              <HeartPulse size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900 leading-tight">MediCare HMS</p>
+              <p className="text-xs text-slate-500">Hospital Management</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900 leading-tight">MediCare HMS</p>
-            <p className="text-xs text-slate-500">Hospital Management</p>
-          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden"
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -100,6 +122,7 @@ export default function Layout() {
               key={to}
               to={to}
               end={to === '/'}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
@@ -135,11 +158,27 @@ export default function Layout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl px-6 py-6">
-          <Outlet />
-        </div>
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Open menu"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <HeartPulse size={16} />
+          </div>
+          <p className="text-sm font-semibold text-slate-900">MediCare HMS</p>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+            <Outlet />
+          </div>
+        </main>
+      </div>
 
       <Modal open={pwModalOpen} onClose={() => setPwModalOpen(false)} title="Change Password">
         <form onSubmit={handleChangePassword} className="space-y-4">

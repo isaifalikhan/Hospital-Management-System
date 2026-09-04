@@ -251,6 +251,7 @@ export default function Appointments() {
 
       {view === 'list' ? (
         <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
               <tr>
@@ -317,9 +318,11 @@ export default function Appointments() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-3">
+        <div className="overflow-x-auto">
+        <div className="grid grid-cols-7 gap-3 min-w-[700px]">
           {weekDays.map((d) => {
             const iso = toISODate(d);
             const dayAppts = weekAppointments
@@ -364,6 +367,7 @@ export default function Appointments() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 

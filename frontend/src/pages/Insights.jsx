@@ -156,6 +156,7 @@ export default function Insights() {
                 <h2 className="text-sm font-semibold text-slate-900">Doctor Utilization</h2>
                 <p className="text-xs text-slate-500">Completed appointments vs. configured available slots in the selected range</p>
               </div>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
                   <tr>
@@ -197,6 +198,7 @@ export default function Insights() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
 
             <div className="card overflow-hidden">
@@ -207,6 +209,7 @@ export default function Insights() {
                   configured bed capacity, so this is a proxy rather than a hard limit)
                 </p>
               </div>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
                   <tr>
@@ -241,6 +244,7 @@ export default function Insights() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </>

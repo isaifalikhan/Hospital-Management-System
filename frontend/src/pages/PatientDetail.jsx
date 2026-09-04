@@ -957,7 +957,7 @@ export default function PatientDetail() {
       <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">
         {viewAdmission && (
           <div className="print-area">
-            <div className="mb-4 flex items-center justify-between print:mb-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:mb-6">
               <div>
                 <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS — Discharge Summary</p>
                 <p className="font-medium text-slate-900">{patient.name}</p>
@@ -991,7 +991,7 @@ export default function PatientDetail() {
       <Modal open={!!viewRecord} onClose={() => setViewRecord(null)} title="Medical Record" wide>
         {viewRecord && (
           <div className="print-area">
-            <div className="mb-4 flex items-center justify-between print:mb-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:mb-6">
               <div>
                 <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS — Medical Record</p>
                 <p className="font-medium text-slate-900">{patient.name}</p>

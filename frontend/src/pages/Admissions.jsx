@@ -72,6 +72,7 @@ export default function Admissions() {
       </div>
 
       <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
             <tr>
@@ -119,6 +120,7 @@ export default function Admissions() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <DischargeModal
@@ -132,7 +134,7 @@ export default function Admissions() {
       <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">
         {viewAdmission && (
           <div className="print-area">
-            <div className="mb-4 flex items-center justify-between print:mb-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:mb-6">
               <div>
                 <p className="hidden text-lg font-semibold text-slate-900 print:block">MediCare HMS — Discharge Summary</p>
                 <p className="font-medium text-slate-900">{viewAdmission.Patient?.name}</p>

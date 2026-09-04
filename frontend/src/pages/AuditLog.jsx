@@ -33,7 +33,7 @@ export default function AuditLog() {
     <div>
       <PageHeader title="Audit Log" subtitle="System-wide record of create, update, and delete actions" />
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <Filter size={15} className="text-slate-400" />
         <select className="input w-auto" value={entityType} onChange={(e) => setEntityType(e.target.value)}>
           <option value="">All entity types</option>
@@ -48,6 +48,7 @@ export default function AuditLog() {
       </div>
 
       <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
             <tr>
@@ -76,6 +77,7 @@ export default function AuditLog() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
