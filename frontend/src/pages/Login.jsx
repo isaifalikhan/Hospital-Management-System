@@ -10,6 +10,16 @@ const DEMO_ACCOUNTS = [
   { role: 'Pharmacist', username: 'pharmacist' },
 ];
 
+// One-click self-service login as Admin/Doctor/Receptionist/Pharmacist is
+// fine for a local demo, but a real liability on a deployed site — anyone
+// who finds the URL gets full admin access with zero friction. Shown only
+// while running the actual Vite dev server (`import.meta.env.DEV`), never
+// in a built bundle (Vercel or any other production deploy), unless
+// explicitly re-enabled with VITE_SHOW_DEMO_ACCOUNTS=true at build time.
+// Hiding this button is not a substitute for rotating the demo accounts'
+// passwords on a live deployment — see README's "Deploying" section.
+const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true';
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -88,23 +98,25 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="card mt-4 p-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-            Demo accounts (password: password123)
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.username}
-                onClick={() => fillDemo(acc.username)}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
-              >
-                <p className="font-medium text-slate-700">{acc.role}</p>
-                <p className="text-slate-500">{acc.username}</p>
-              </button>
-            ))}
+        {SHOW_DEMO_ACCOUNTS && (
+          <div className="card mt-4 p-4">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              Demo accounts (password: password123)
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {DEMO_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.username}
+                  onClick={() => fillDemo(acc.username)}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
+                >
+                  <p className="font-medium text-slate-700">{acc.role}</p>
+                  <p className="text-slate-500">{acc.username}</p>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <p className="mt-4 text-center text-xs text-slate-400">
           Patient? <a href="/portal/login" className="text-indigo-600 hover:underline">Sign in to the patient portal</a>.

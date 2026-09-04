@@ -179,7 +179,12 @@ All seeded accounts use the password `password123`.
 | Receptionist | `reception`   |
 | Pharmacist   | `pharmacist`  |
 
-The login screen also has one-click buttons to fill in each demo account.
+The login screen also has one-click buttons to fill in each demo account — but only while
+running the Vite dev server (`import.meta.env.DEV`). A production build (Vercel or any other
+deploy) never renders that panel or ships the `password123` string in its JS bundle, since
+handing out working admin/doctor/receptionist/pharmacist logins to anyone who finds the URL
+is a real liability, not a demo convenience, once the app is live. **Hiding the button does
+not revoke the accounts** — see the next section.
 
 ## Resetting sample data
 
@@ -220,22 +225,28 @@ This project is set up for local development out of the box. Before deploying it
 use:
 
 1. Set a strong, random `JWT_SECRET` in `backend/.env`.
-2. Consider swapping SQLite for PostgreSQL/MySQL for concurrent multi-user production loads
+2. **Change every demo account's password** (`admin`, `sjohnson`, `reception`, `pharmacist` —
+   all `password123` out of the box) from Staff Users once you have your own admin login, or
+   delete those accounts outright. The production build already hides the one-click login
+   panel (see Demo login credentials above), but the accounts themselves still work with the
+   password published in this README until you change them — that's a real login, not a UI
+   convenience, and this repo being public means that password is public too.
+3. Consider swapping SQLite for PostgreSQL/MySQL for concurrent multi-user production loads
    (Sequelize makes this a config change in `backend/config/db.js`, not a rewrite).
-3. Build the frontend for production with `npm run build` in `frontend/` and serve the
+4. Build the frontend for production with `npm run build` in `frontend/` and serve the
    `dist/` folder from a static host or from the Express server itself.
-4. Add HTTPS, rate limiting, and audit logging appropriate for handling real patient data
+5. Add HTTPS, rate limiting, and audit logging appropriate for handling real patient data
    (HIPAA or your local equivalent regulations may apply).
-5. On Vercel specifically, set `CRON_SECRET` so `GET /api/cron/reminders` (already scheduled
+6. On Vercel specifically, set `CRON_SECRET` so `GET /api/cron/reminders` (already scheduled
    in `vercel.json`) can run appointment reminders — see Appointment Reminder Emails above.
    Vercel's free/Hobby tier historically limits how often a cron job actually fires (daily,
    not every 15 minutes); check your plan's current cron limits and adjust the schedule in
    `vercel.json` if needed.
-6. First-time setup on a fresh hosted database (e.g. a new Vercel Postgres instance): set
+7. First-time setup on a fresh hosted database (e.g. a new Vercel Postgres instance): set
    `SETUP_SECRET`, then hit `GET /api/setup/seed?secret=...` once to create the schema and
    demo accounts (refuses to run if any user already exists, unless `&force=true`). Remove
    `SETUP_SECRET` and delete `backend/routes/setupRoutes.js` once you're past the demo stage.
-7. When you're ready to move a deployment from demo data to real use, run
+8. When you're ready to move a deployment from demo data to real use, run
    `node backend/utils/clearDemoData.js` (needs the same DB env vars as the server) — it
    deletes all clinical/business data (patients, appointments, records, invoices, medicines,
    etc.) but leaves the `users` table untouched, so existing logins keep working.
