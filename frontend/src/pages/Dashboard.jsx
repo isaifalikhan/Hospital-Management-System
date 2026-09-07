@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Stethoscope, CalendarClock, DollarSign, PackageX, Clock, CalendarX2 } from 'lucide-react';
+import { Users, Stethoscope, CalendarClock, Banknote, PackageX, Clock, CalendarX2 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
+import { formatMoney } from '../utils/currency';
 
 const PIE_COLORS = ['#6366f1', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6'];
 
@@ -54,15 +55,15 @@ export default function Dashboard() {
         <StatCard icon={CalendarClock} label="Today's Appointments" value={data.todaysAppointments} tone="sky" />
         <StatCard icon={Clock} label="Upcoming Appointments" value={data.upcomingAppointments} tone="amber" />
         <StatCard
-          icon={DollarSign}
+          icon={Banknote}
           label="Outstanding Revenue"
-          value={`$${Number(data.outstandingRevenue).toFixed(2)}`}
+          value={formatMoney(Number(data.outstandingRevenue))}
           tone="rose"
         />
         <StatCard
-          icon={DollarSign}
+          icon={Banknote}
           label="Revenue This Month"
-          value={`$${Number(data.revenueThisMonth).toFixed(2)}`}
+          value={formatMoney(Number(data.revenueThisMonth))}
           tone="emerald"
         />
         <StatCard icon={PackageX} label="Low Stock Medicines" value={data.lowStockCount} tone="rose" />
@@ -84,7 +85,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={45} />
-                <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Revenue']} />
+                <Tooltip formatter={(v) => [formatMoney(Number(v)), 'Revenue']} />
                 <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} fill="url(#revenueFill)" />
               </AreaChart>
             </ResponsiveContainer>

@@ -7,6 +7,10 @@ const Patient = sequelize.define('Patient', {
   name: { type: DataTypes.STRING, allowNull: false },
   dob: { type: DataTypes.DATEONLY, allowNull: true },
   gender: { type: DataTypes.ENUM('male', 'female', 'other'), allowNull: true },
+  // National identity number as written on the card, e.g. "12345-1234567-1".
+  // Optional and deliberately not unique: walk-in minors and dependants are
+  // routinely registered against no CNIC or a guardian's.
+  cnic: { type: DataTypes.STRING, allowNull: true },
   bloodGroup: { type: DataTypes.STRING, allowNull: true },
   phone: { type: DataTypes.STRING, allowNull: true },
   email: { type: DataTypes.STRING, allowNull: true },

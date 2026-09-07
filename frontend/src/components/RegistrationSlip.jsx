@@ -1,11 +1,14 @@
 import { Printer, HeartPulse } from 'lucide-react';
+import { formatMoney } from '../utils/currency';
 
 // The reception record: everything the front desk collects from a patient
 // (demographics, contact, emergency contact, allergies) plus, when the slip
-// is raised off a visit, that visit's doctor/reason/queue token. Rendered as
-// one printable block so a receptionist can hand the patient a copy, and
-// reused wherever that information is shown — the Check-In confirmation, the
-// Patients list, the patient chart and the walk-in queue.
+// is raised off a visit, that visit's doctor/reason/queue token and the
+// consultation fee to be collected — which is what makes it an OPD chalan
+// rather than a plain registration slip. Rendered as one printable block so
+// a receptionist can hand the patient a copy, and reused wherever that
+// information is shown — the OPD confirmation, the Patients list, the
+// patient chart and the walk-in queue.
 //
 // The wrapping `.print-area` class is the shared "print only this block"
 // technique defined in index.css (same one the invoice and discharge summary
@@ -39,6 +42,9 @@ export default function RegistrationSlip({ patient, visit }) {
   if (!patient) return null;
 
   const age = ageFromDob(patient.dob);
+  // A visit turns the slip into a chalan; a fee turns it into one worth
+  // presenting at the cash counter.
+  const fee = Number(visit?.fee) || 0;
 
   return (
     <div className="print-area">
@@ -49,7 +55,7 @@ export default function RegistrationSlip({ patient, visit }) {
           </div>
           <div>
             <p className="text-base font-semibold text-slate-900">MediCare HMS</p>
-            <p className="text-xs text-slate-500">Patient Registration Slip</p>
+            <p className="text-xs text-slate-500">{visit ? 'OPD Chalan' : 'Patient Registration Slip'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -83,7 +89,7 @@ export default function RegistrationSlip({ patient, visit }) {
           {patient.dob ? `${formatDate(patient.dob)}${age !== null ? ` (${age} yrs)` : ''}` : ''}
         </Field>
         <Field label="Gender">{patient.gender && <span className="capitalize">{patient.gender}</span>}</Field>
-        <Field label="Blood Group">{patient.bloodGroup}</Field>
+        <Field label="CNIC">{patient.cnic}</Field>
         <Field label="Patient Status">{patient.status && <span className="capitalize">{patient.status}</span>}</Field>
         <Field label="Phone">{patient.phone}</Field>
         <Field label="Email">{patient.email}</Field>
@@ -110,6 +116,23 @@ export default function RegistrationSlip({ patient, visit }) {
             </Field>
             <Field label="Reason for Visit" wide>{visit.reason}</Field>
           </dl>
+
+          <h3 className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-slate-500">Charges</h3>
+          <div className="rounded-lg border border-slate-200">
+            <div className="flex items-center justify-between px-4 py-2.5 text-sm text-slate-700">
+              <span>Consultation fee{visit.doctorName ? ` — ${visit.doctorName}` : ''}</span>
+              <span>{formatMoney(fee)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900">
+              <span>Total Payable</span>
+              <span>{formatMoney(fee)}</span>
+            </div>
+          </div>
+          {fee === 0 && (
+            <p className="mt-1.5 text-xs text-slate-400 print:hidden">
+              No consultation fee is set on this doctor's profile.
+            </p>
+          )}
         </>
       )}
 

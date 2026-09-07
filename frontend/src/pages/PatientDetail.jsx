@@ -14,6 +14,7 @@ import SignaturePad from '../components/SignaturePad';
 import DischargeModal from '../components/DischargeModal';
 import AttachmentList from '../components/AttachmentList';
 import RegistrationSlip from '../components/RegistrationSlip';
+import { formatMoney } from '../utils/currency';
 
 const emptyRecord = {
   diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '', signatureData: null,
@@ -345,7 +346,7 @@ export default function PatientDetail() {
     })),
     ...(patient.Invoices || []).map((inv) => ({
       date: inv.date, type: 'invoice', icon: Receipt, tone: 'text-rose-600 bg-rose-50',
-      title: `Invoice ${inv.invoiceNumber}`, detail: `$${Number(inv.total).toFixed(2)}`, status: inv.status,
+      title: `Invoice ${inv.invoiceNumber}`, detail: formatMoney(Number(inv.total)), status: inv.status,
     })),
     ...(patient.Immunizations || []).map((v) => ({
       date: v.dateGiven, type: 'immunization', icon: Syringe, tone: 'text-teal-600 bg-teal-50',
@@ -363,6 +364,7 @@ export default function PatientDetail() {
     tokenNumber: latestAppointment.tokenNumber,
     doctorName: latestAppointment.Doctor?.name,
     specialization: latestAppointment.Doctor?.specialization,
+    fee: latestAppointment.Doctor?.consultationFee,
     reason: latestAppointment.reason,
     visitType: latestAppointment.visitType,
     date: latestAppointment.date,
@@ -506,7 +508,7 @@ export default function PatientDetail() {
                     <p className="font-medium text-slate-800">{inv.invoiceNumber}</p>
                     <StatusBadge status={inv.status} />
                   </div>
-                  <p className="text-xs text-slate-500">${Number(inv.total).toFixed(2)} • {inv.date}</p>
+                  <p className="text-xs text-slate-500">{formatMoney(Number(inv.total))} • {inv.date}</p>
                 </li>
               ))}
             </ul>

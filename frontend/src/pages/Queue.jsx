@@ -55,6 +55,7 @@ export default function Queue() {
           tokenNumber: appt.tokenNumber,
           doctorName: appt.Doctor?.name,
           specialization: appt.Doctor?.specialization,
+          fee: appt.Doctor?.consultationFee,
           reason: appt.reason,
           visitType: appt.visitType,
           date: appt.date,

@@ -95,7 +95,7 @@ exports.create = async (req, res, next) => {
 
     await logAudit(req, {
       action: 'create', entityType: 'Invoice', entityId: invoice.id,
-      summary: `Created invoice ${invoice.invoiceNumber} for patient #${patientId} ($${total.toFixed(2)})`,
+      summary: `Created invoice ${invoice.invoiceNumber} for patient #${patientId} (Rs. ${total.toFixed(2)})`,
     });
 
     const full = await Invoice.findByPk(invoice.id, {
@@ -126,7 +126,7 @@ exports.recordPayment = async (req, res, next) => {
     await invoice.save();
     await logAudit(req, {
       action: 'update', entityType: 'Invoice', entityId: invoice.id,
-      summary: `Recorded payment of $${Number(amount).toFixed(2)} on ${invoice.invoiceNumber}`,
+      summary: `Recorded payment of Rs. ${Number(amount).toFixed(2)} on ${invoice.invoiceNumber}`,
     });
     res.json(attachUpiPaymentUri(invoice));
   } catch (err) { next(err); }

@@ -12,7 +12,7 @@ import Modal from './Modal';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
-  { to: '/checkin', label: 'Check-In', icon: Ticket, roles: ['admin', 'receptionist'] },
+  { to: '/checkin', label: 'OPD', icon: Ticket, roles: ['admin', 'receptionist'] },
   { to: '/queue', label: 'Queue', icon: PhoneCall, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/patients', label: 'Patients', icon: Users, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/appointments', label: 'Appointments', icon: CalendarClock, roles: ['admin', 'doctor', 'receptionist'] },

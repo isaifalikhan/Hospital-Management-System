@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, BedDouble, Percent, Download, Filter, DollarSign } from 'lucide-react';
+import { TrendingUp, BedDouble, Percent, Download, Filter, Banknote } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend,
@@ -7,6 +7,7 @@ import {
 import { dashboardApi, reportsApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
+import { formatMoney } from '../utils/currency';
 
 const PIE_COLORS = ['#6366f1', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6'];
 
@@ -93,7 +94,7 @@ export default function Insights() {
       ) : data && (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={DollarSign} label="Revenue in Range" value={`$${totalRevenue.toFixed(2)}`} tone="emerald" />
+            <StatCard icon={Banknote} label="Revenue in Range" value={formatMoney(totalRevenue)} tone="emerald" />
             <StatCard icon={Percent} label="Avg. Doctor Utilization" value={`${avgUtilization.toFixed(1)}%`} tone="indigo" />
             <StatCard icon={BedDouble} label="Active Admissions" value={data.bedOccupancySummary.totalActiveAdmissions} tone="sky" />
             <StatCard
@@ -116,7 +117,7 @@ export default function Insights() {
                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}
                       interval={0} angle={-20} textAnchor="end" height={50} />
                     <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={55} />
-                    <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Revenue']} />
+                    <Tooltip formatter={(v) => [formatMoney(Number(v)), 'Revenue']} />
                     <Bar dataKey="revenue" fill="#6366f1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -142,7 +143,7 @@ export default function Insights() {
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Revenue']} />
+                    <Tooltip formatter={(v) => [formatMoney(Number(v)), 'Revenue']} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>

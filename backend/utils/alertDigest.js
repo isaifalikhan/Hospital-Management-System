@@ -43,10 +43,10 @@ function buildDigestText({ lowStock, overdueInvoices }) {
 
   if (overdueInvoices.length) {
     const totalOutstanding = overdueInvoices.reduce((sum, inv) => sum + (inv.total - inv.amountPaid), 0);
-    lines.push(`OVERDUE INVOICES (${overdueInvoices.length}, $${totalOutstanding.toFixed(2)} outstanding):`);
+    lines.push(`OVERDUE INVOICES (${overdueInvoices.length}, Rs. ${totalOutstanding.toFixed(2)} outstanding):`);
     overdueInvoices.forEach((inv) => {
       const balance = (inv.total - inv.amountPaid).toFixed(2);
-      lines.push(`  - ${inv.invoiceNumber} (${inv.Patient?.name || 'Unknown patient'}): $${balance} outstanding, dated ${inv.date}`);
+      lines.push(`  - ${inv.invoiceNumber} (${inv.Patient?.name || 'Unknown patient'}): Rs. ${balance} outstanding, dated ${inv.date}`);
     });
     lines.push('');
   }

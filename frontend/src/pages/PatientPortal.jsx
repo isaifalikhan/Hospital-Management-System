@@ -7,6 +7,7 @@ import { patientPortalApi } from '../api';
 import { usePatientPortal } from '../context/PatientPortalContext';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
+import { formatMoney } from '../utils/currency';
 
 const today = new Date().toISOString().slice(0, 10);
 const emptyBooking = { doctorId: '', date: today, time: '', reason: '', isVideoConsult: false };
@@ -242,7 +243,7 @@ export default function PatientPortal() {
                       <p className="font-medium text-slate-800">{inv.invoiceNumber}</p>
                       <StatusBadge status={inv.status} />
                     </div>
-                    <p className="text-xs text-slate-500">${Number(inv.total).toFixed(2)} • {inv.date}</p>
+                    <p className="text-xs text-slate-500">{formatMoney(Number(inv.total))} • {inv.date}</p>
                   </li>
                 ))}
               </ul>

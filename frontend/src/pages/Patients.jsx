@@ -9,7 +9,7 @@ import StatusBadge from '../components/StatusBadge';
 import RegistrationSlip from '../components/RegistrationSlip';
 
 const emptyForm = {
-  name: '', dob: '', gender: 'male', bloodGroup: '', phone: '', email: '',
+  name: '', dob: '', gender: 'male', cnic: '', bloodGroup: '', phone: '', email: '',
   address: '', emergencyContactName: '', emergencyContactPhone: '', allergies: '', status: 'outpatient',
 };
 
@@ -211,6 +211,10 @@ export default function Patients() {
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
+          </div>
+          <div>
+            <label className="label">CNIC</label>
+            <input className="input" value={form.cnic || ''} onChange={(e) => setForm({ ...form, cnic: e.target.value })} placeholder="12345-1234567-1" />
           </div>
           <div>
             <label className="label">Blood Group</label>

@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, ArrowDownCircle, ArrowUpCircle, AlertTriangle, Cl
 import { medicinesApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
+import { formatMoney } from '../utils/currency';
 
 const emptyForm = {
   name: '', category: '', manufacturer: '', unit: 'tablet', unitPrice: 0,
@@ -187,7 +188,7 @@ export default function Pharmacy() {
                   <tr key={m.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-900">{m.name}</td>
                     <td className="px-4 py-3 text-slate-600">{m.category || '—'}</td>
-                    <td className="px-4 py-3 text-slate-600">${Number(m.unitPrice).toFixed(2)} / {m.unit}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatMoney(Number(m.unitPrice))} / {m.unit}</td>
                     <td className="px-4 py-3">
                       <span className={`flex items-center gap-1 ${low ? 'text-rose-600 font-medium' : 'text-slate-800'}`}>
                         {low && <AlertTriangle size={14} />} {m.quantityInStock}
@@ -243,7 +244,7 @@ export default function Pharmacy() {
             <input className="input" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="tablet, bottle, box..." />
           </div>
           <div>
-            <label className="label">Unit Price ($)</label>
+            <label className="label">Unit Price (Rs.)</label>
             <input type="number" min="0" step="0.01" className="input" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} />
           </div>
           <div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HeartPulse, AlertCircle, CheckCircle2, CalendarClock, ArrowLeft } from 'lucide-react';
 import { publicApi } from '../api';
+import { formatMoney } from '../utils/currency';
 
 const today = new Date().toISOString().slice(0, 10);
 const emptyForm = { doctorId: '', date: today, time: '', name: '', phone: '', email: '', reason: '' };
@@ -139,7 +140,7 @@ export default function PublicBooking() {
                   ))}
                 </select>
                 {selectedDoctor?.consultationFee > 0 && (
-                  <p className="mt-1 text-xs text-slate-400">Consultation fee: ${Number(selectedDoctor.consultationFee).toFixed(2)}</p>
+                  <p className="mt-1 text-xs text-slate-400">Consultation fee: {formatMoney(Number(selectedDoctor.consultationFee))}</p>
                 )}
               </div>
 

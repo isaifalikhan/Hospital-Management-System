@@ -45,7 +45,7 @@ exports.list = async (req, res, next) => {
 // and reprint a patient's registration slip, while the full chart behind
 // `get` below stays limited to admin/doctor/receptionist.
 const REGISTRATION_ATTRIBUTES = [
-  'id', 'mrn', 'name', 'dob', 'gender', 'bloodGroup', 'phone', 'email', 'address',
+  'id', 'mrn', 'name', 'dob', 'gender', 'cnic', 'bloodGroup', 'phone', 'email', 'address',
   'emergencyContactName', 'emergencyContactPhone', 'allergies', 'status', 'createdAt',
 ];
 
@@ -62,7 +62,7 @@ exports.get = async (req, res, next) => {
     const patient = await Patient.findByPk(req.params.id, {
       attributes: { exclude: ['portalPin'] },
       include: [
-        { model: Appointment, include: [{ model: Doctor, attributes: ['id', 'name', 'specialization'] }] },
+        { model: Appointment, include: [{ model: Doctor, attributes: ['id', 'name', 'specialization', 'consultationFee'] }] },
         { model: MedicalRecord, include: [{ model: Doctor, attributes: ['id', 'name'] }, { model: PrescriptionItem }] },
         { model: Invoice },
         { model: LabOrder, include: [{ model: Doctor, attributes: ['id', 'name'] }] },

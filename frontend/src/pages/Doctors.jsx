@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
+import { formatMoney } from '../utils/currency';
 
 const emptyForm = {
   name: '', specialization: '', qualification: '', phone: '', email: '',
@@ -114,7 +115,7 @@ export default function Doctors() {
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div>
-                  <p className="text-slate-500">Fee: <span className="text-slate-800 font-medium">${doc.consultationFee}</span></p>
+                  <p className="text-slate-500">Fee: <span className="text-slate-800 font-medium">{formatMoney(doc.consultationFee)}</span></p>
                   {doc.availableDays && <p className="text-xs text-slate-400 mt-0.5">{doc.availableDays} • {doc.availableTime}</p>}
                 </div>
                 {canEdit && (
@@ -167,7 +168,7 @@ export default function Doctors() {
             <input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div>
-            <label className="label">Consultation Fee ($)</label>
+            <label className="label">Consultation Fee (Rs.)</label>
             <input type="number" min="0" step="0.01" className="input" value={form.consultationFee} onChange={(e) => setForm({ ...form, consultationFee: e.target.value })} />
           </div>
           <div>

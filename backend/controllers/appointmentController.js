@@ -18,7 +18,9 @@ exports.list = async (req, res, next) => {
       where,
       include: [
         { model: Patient, attributes: ['id', 'name', 'mrn', 'phone'] },
-        { model: Doctor, attributes: ['id', 'name', 'specialization'] },
+        // consultationFee so the queue can reprint a visit's OPD chalan
+        // without a second round-trip for the doctor.
+        { model: Doctor, attributes: ['id', 'name', 'specialization', 'consultationFee'] },
       ],
       order: [['date', 'DESC'], ['time', 'ASC']],
     });

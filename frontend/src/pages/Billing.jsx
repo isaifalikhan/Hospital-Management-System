@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Plus, Trash2, DollarSign, Eye, Download, Printer } from 'lucide-react';
+import { Plus, Trash2, Banknote, Eye, Download, Printer } from 'lucide-react';
 import { invoicesApi, patientsApi, reportsApi } from '../api';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
+import { formatMoney } from '../utils/currency';
 
 const CATEGORIES = ['consultation', 'procedure', 'medicine', 'lab', 'room', 'other'];
 const emptyItem = { description: '', category: 'consultation', quantity: 1, unitPrice: 0 };
@@ -171,8 +172,8 @@ export default function Billing() {
                   <td className="px-4 py-3 font-mono text-xs text-slate-500">{inv.invoiceNumber}</td>
                   <td className="px-4 py-3 font-medium text-slate-900">{inv.Patient?.name}</td>
                   <td className="px-4 py-3 text-slate-600">{inv.date}</td>
-                  <td className="px-4 py-3 text-slate-800">${Number(inv.total).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-slate-600">${Number(inv.amountPaid).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-slate-800">{formatMoney(Number(inv.total))}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatMoney(Number(inv.amountPaid))}</td>
                   <td className="px-4 py-3"><StatusBadge status={inv.status} /></td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => openView(inv)} className="rounded p-1.5 text-slate-500 hover:bg-slate-100"><Eye size={16} /></button>
@@ -228,21 +229,21 @@ export default function Billing() {
 
           <div className="grid grid-cols-2 gap-4 sm:w-1/2 sm:ml-auto">
             <div>
-              <label className="label">Discount ($)</label>
+              <label className="label">Discount (Rs.)</label>
               <input type="number" min="0" step="0.01" className="input" value={discount} onChange={(e) => setDiscount(e.target.value)} />
             </div>
             <div>
-              <label className="label">Tax ($)</label>
+              <label className="label">Tax (Rs.)</label>
               <input type="number" min="0" step="0.01" className="input" value={tax} onChange={(e) => setTax(e.target.value)} />
             </div>
           </div>
 
           <div className="rounded-lg bg-slate-50 p-3 text-sm sm:w-1/2 sm:ml-auto">
-            <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Discount</span><span>-${Number(discount || 0).toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Tax</span><span>+${Number(tax || 0).toFixed(2)}</span></div>
+            <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
+            <div className="flex justify-between"><span>Discount</span><span>-{formatMoney(Number(discount || 0))}</span></div>
+            <div className="flex justify-between"><span>Tax</span><span>+{formatMoney(Number(tax || 0))}</span></div>
             <div className="flex justify-between font-semibold text-slate-900 border-t border-slate-200 mt-1 pt-1">
-              <span>Total</span><span>${total.toFixed(2)}</span>
+              <span>Total</span><span>{formatMoney(total)}</span>
             </div>
           </div>
 
@@ -287,8 +288,8 @@ export default function Billing() {
                     <td className="py-2">{it.description}</td>
                     <td className="py-2 capitalize text-slate-500">{it.category}</td>
                     <td className="py-2 text-right">{it.quantity}</td>
-                    <td className="py-2 text-right">${Number(it.unitPrice).toFixed(2)}</td>
-                    <td className="py-2 text-right">${Number(it.amount).toFixed(2)}</td>
+                    <td className="py-2 text-right">{formatMoney(Number(it.unitPrice))}</td>
+                    <td className="py-2 text-right">{formatMoney(Number(it.amount))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -296,14 +297,14 @@ export default function Billing() {
             </div>
 
             <div className="rounded-lg bg-slate-50 p-3 text-sm mb-4 sm:w-1/2 sm:ml-auto">
-              <div className="flex justify-between"><span>Subtotal</span><span>${Number(viewInvoice.subtotal).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>Discount</span><span>-${Number(viewInvoice.discount).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>Tax</span><span>+${Number(viewInvoice.tax).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(Number(viewInvoice.subtotal))}</span></div>
+              <div className="flex justify-between"><span>Discount</span><span>-{formatMoney(Number(viewInvoice.discount))}</span></div>
+              <div className="flex justify-between"><span>Tax</span><span>+{formatMoney(Number(viewInvoice.tax))}</span></div>
               <div className="flex justify-between font-semibold text-slate-900 border-t border-slate-200 mt-1 pt-1">
-                <span>Total</span><span>${Number(viewInvoice.total).toFixed(2)}</span>
+                <span>Total</span><span>{formatMoney(Number(viewInvoice.total))}</span>
               </div>
-              <div className="flex justify-between text-emerald-600"><span>Paid</span><span>${Number(viewInvoice.amountPaid).toFixed(2)}</span></div>
-              <div className="flex justify-between font-medium"><span>Balance</span><span>${(Number(viewInvoice.total) - Number(viewInvoice.amountPaid)).toFixed(2)}</span></div>
+              <div className="flex justify-between text-emerald-600"><span>Paid</span><span>{formatMoney(Number(viewInvoice.amountPaid))}</span></div>
+              <div className="flex justify-between font-medium"><span>Balance</span><span>{formatMoney((Number(viewInvoice.total) - Number(viewInvoice.amountPaid)))}</span></div>
             </div>
 
             {viewInvoice.upiPaymentUri && (
@@ -316,7 +317,7 @@ export default function Billing() {
                 <div className="text-sm">
                   <p className="font-medium text-slate-900">Scan to pay via UPI</p>
                   <p className="text-slate-500">
-                    Balance due: ${(Number(viewInvoice.total) - Number(viewInvoice.amountPaid)).toFixed(2)}
+                    Balance due: {formatMoney((Number(viewInvoice.total) - Number(viewInvoice.amountPaid)))}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">Front desk will confirm and record the payment.</p>
                 </div>
@@ -326,7 +327,7 @@ export default function Billing() {
             {viewInvoice.status !== 'paid' && (
               <form onSubmit={handlePayment} className="flex items-end gap-2 border-t border-slate-200 pt-4 print:hidden">
                 <div className="flex-1">
-                  <label className="label">Record Payment ($)</label>
+                  <label className="label">Record Payment (Rs.)</label>
                   <input type="number" min="0" step="0.01" className="input" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
                 </div>
                 <div>
@@ -338,7 +339,7 @@ export default function Billing() {
                     <option value="bank_transfer">Bank Transfer</option>
                   </select>
                 </div>
-                <button type="submit" className="btn-primary"><DollarSign size={16} /> Record</button>
+                <button type="submit" className="btn-primary"><Banknote size={16} /> Record</button>
               </form>
             )}
           </div>

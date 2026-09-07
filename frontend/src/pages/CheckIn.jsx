@@ -6,11 +6,11 @@ import PageHeader from '../components/PageHeader';
 import RegistrationSlip from '../components/RegistrationSlip';
 
 const emptyNewPatient = {
-  name: '', dob: '', gender: 'male', bloodGroup: '', phone: '', email: '',
+  name: '', dob: '', gender: 'male', cnic: '', bloodGroup: '', phone: '', email: '',
   address: '', emergencyContactName: '', emergencyContactPhone: '', allergies: '', status: 'outpatient',
 };
 
-// Front-desk walk-in check-in: find (or register) a patient, pick a doctor,
+// OPD (out-patient department) front desk: find (or register) a patient, pick a doctor,
 // and submit — the server assigns today's date, the check-in time, and a
 // per-doctor daily queue token automatically (see
 // backend/controllers/appointmentController.js#create, visitType:
@@ -84,6 +84,7 @@ export default function CheckIn() {
           tokenNumber: apptRes.data.tokenNumber,
           doctorName: doctor?.name || apptRes.data.Doctor?.name,
           specialization: doctor?.specialization,
+          fee: doctor?.consultationFee,
           reason,
           visitType: 'walk-in',
           date: apptRes.data.date,
@@ -106,7 +107,7 @@ export default function CheckIn() {
 
   return (
     <div>
-      <PageHeader title="Check-In" subtitle="Register a walk-in patient, pick a doctor, and get a queue token" />
+      <PageHeader title="OPD" subtitle="Register a walk-in out-patient, pick a doctor, and get a queue token" />
 
       {confirmation ? (
         <div className="mx-auto max-w-2xl space-y-4">
@@ -211,6 +212,10 @@ export default function CheckIn() {
                 <div>
                   <label className="label">Date of Birth</label>
                   <input type="date" className="input" value={newPatient.dob} onChange={(e) => setNewPatient({ ...newPatient, dob: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">CNIC</label>
+                  <input className="input" value={newPatient.cnic} onChange={(e) => setNewPatient({ ...newPatient, cnic: e.target.value })} placeholder="12345-1234567-1" />
                 </div>
                 <div>
                   <label className="label">Blood Group</label>

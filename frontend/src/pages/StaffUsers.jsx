@@ -240,7 +240,7 @@ export default function StaffUsers() {
                     </select>
                   </div>
                   <div>
-                    <label className="label">Consultation Fee ($)</label>
+                    <label className="label">Consultation Fee (Rs.)</label>
                     <input type="number" min="0" step="0.01" className="input" value={form.consultationFee} onChange={(e) => setForm({ ...form, consultationFee: e.target.value })} />
                   </div>
                   <div>

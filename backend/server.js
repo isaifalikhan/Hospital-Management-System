@@ -9,6 +9,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+const { DataTypes } = require('sequelize');
 const { sequelize } = require('./models');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
@@ -132,6 +133,20 @@ async function start() {
   try {
     await sequelize.authenticate();
     await sequelize.sync(); // creates tables if they don't exist
+
+    // sync() creates missing tables but never alters existing ones, so a
+    // database created before Patient.cnic landed still has the old
+    // patients table and every read of the column would fail. Add it when
+    // it's absent. Done through the query interface rather than
+    // "ALTER TABLE ... ADD COLUMN IF NOT EXISTS", which Postgres supports
+    // and SQLite doesn't.
+    const queryInterface = sequelize.getQueryInterface();
+    const patientColumns = await queryInterface.describeTable('patients');
+    if (!patientColumns.cnic) {
+      await queryInterface.addColumn('patients', 'cnic', { type: DataTypes.STRING, allowNull: true });
+      console.log('Added missing "cnic" column to patients');
+    }
+
     // Enforces "one active appointment per doctor/date/time" at the DB level
     // so two concurrent booking requests can't both pass the app-level clash
     // check and double-book the same slot. Cancelled appointments are

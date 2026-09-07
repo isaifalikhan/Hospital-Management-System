@@ -40,17 +40,26 @@ const userValidators = {
   ],
 };
 
+// 13 digits, with or without the usual "12345-1234567-1" dashes. Optional
+// everywhere — plenty of walk-ins (minors, dependants) have no card of
+// their own to register against.
+const CNIC = /^\d{5}-?\d{7}-?\d$/;
+const cnicRule = body('cnic').optional({ values: 'falsy' }).trim().matches(CNIC)
+  .withMessage('CNIC must be 13 digits, e.g. 12345-1234567-1');
+
 const patientValidators = {
   create: [
     body('name').trim().notEmpty().withMessage('Patient name is required'),
     body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
     body('gender').optional({ values: 'falsy' }).isIn(['male', 'female', 'other']).withMessage('Invalid gender'),
     body('dob').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid date of birth'),
+    cnicRule,
   ],
   update: [
     body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
     body('gender').optional({ values: 'falsy' }).isIn(['male', 'female', 'other']).withMessage('Invalid gender'),
     body('dob').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid date of birth'),
+    cnicRule,
   ],
   setPortalPin: [
     body('pin').matches(/^\d{4,6}$/).withMessage('PIN must be 4-6 digits'),
