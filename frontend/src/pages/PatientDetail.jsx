@@ -13,6 +13,7 @@ import Modal from '../components/Modal';
 import SignaturePad from '../components/SignaturePad';
 import DischargeModal from '../components/DischargeModal';
 import AttachmentList from '../components/AttachmentList';
+import RegistrationSlip from '../components/RegistrationSlip';
 
 const emptyRecord = {
   diagnosis: '', treatment: '', prescription: '', notes: '', vitals: '', signatureData: null,
@@ -71,6 +72,7 @@ export default function PatientDetail() {
   const [savingImm, setSavingImm] = useState(false);
 
   const [showTimeline, setShowTimeline] = useState(true);
+  const [slipOpen, setSlipOpen] = useState(false);
 
   const [pin, setPin] = useState('');
   const [portalEmail, setPortalEmail] = useState('');
@@ -352,6 +354,21 @@ export default function PatientDetail() {
     })),
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // Most recent visit, shown on the registration slip so a reprint carries
+  // the doctor/reason/token the patient was last checked in with.
+  const latestAppointment = (patient.Appointments || [])
+    .slice()
+    .sort((a, b) => `${b.date} ${b.time || ''}`.localeCompare(`${a.date} ${a.time || ''}`))[0];
+  const latestVisit = latestAppointment && {
+    tokenNumber: latestAppointment.tokenNumber,
+    doctorName: latestAppointment.Doctor?.name,
+    specialization: latestAppointment.Doctor?.specialization,
+    reason: latestAppointment.reason,
+    visitType: latestAppointment.visitType,
+    date: latestAppointment.date,
+    time: latestAppointment.time,
+  };
+
   const upcomingImmunizations = (patient.Immunizations || [])
     .filter((v) => v.nextDueDate && new Date(v.nextDueDate) >= new Date(new Date().toISOString().slice(0, 10)))
     .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
@@ -365,6 +382,11 @@ export default function PatientDetail() {
       <PageHeader
         title={patient.name}
         subtitle={`${patient.mrn} ${age !== null ? `• ${age} years` : ''} ${patient.gender ? `• ${patient.gender}` : ''}`}
+        action={
+          <button className="btn-secondary" onClick={() => setSlipOpen(true)} title="View or print the reception registration slip">
+            <Printer size={16} /> Registration Slip
+          </button>
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -953,6 +975,10 @@ export default function PatientDetail() {
         onSubmit={handleDischargeSubmit}
         onGenerateSummary={generateDischargeSummary}
       />
+
+      <Modal open={slipOpen} onClose={() => setSlipOpen(false)} title="Registration Slip" wide>
+        <RegistrationSlip patient={patient} visit={latestVisit} />
+      </Modal>
 
       <Modal open={!!viewAdmission} onClose={() => setViewAdmission(null)} title="Discharge Summary">
         {viewAdmission && (

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { PhoneCall, CheckCircle2, RotateCcw, UserX, Tv } from 'lucide-react';
-import { appointmentsApi } from '../api';
+import { PhoneCall, CheckCircle2, RotateCcw, UserX, Tv, Printer } from 'lucide-react';
+import { appointmentsApi, patientsApi } from '../api';
+import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
+import Modal from '../components/Modal';
+import RegistrationSlip from '../components/RegistrationSlip';
 
 const today = new Date().toISOString().slice(0, 10);
 const REFRESH_MS = 10000;
@@ -12,9 +15,17 @@ const REFRESH_MS = 10000;
 // separate page (QueueDisplay.jsx, route /queue-display) meant for a lobby
 // TV — this page is the one with names and the actual controls.
 export default function Queue() {
+  const { user } = useAuth();
+  // Everyone can read the queue and reprint a slip off it; only the roles that
+  // own the schedule can call, complete or no-show a token (the same roles
+  // PUT /api/appointments/:id accepts).
+  const canManageQueue = ['admin', 'doctor', 'receptionist'].includes(user?.role);
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [slip, setSlip] = useState(null);
+  const [slipLoadingId, setSlipLoadingId] = useState(null);
 
   async function load() {
     try {
@@ -31,6 +42,31 @@ export default function Queue() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reprint the reception slip for a token. The queue listing only carries a
+  // few patient columns, so fetch the full record before rendering the slip.
+  async function openSlip(appt) {
+    setSlipLoadingId(appt.id);
+    try {
+      const res = await patientsApi.registration(appt.patientId);
+      setSlip({
+        patient: res.data,
+        visit: {
+          tokenNumber: appt.tokenNumber,
+          doctorName: appt.Doctor?.name,
+          specialization: appt.Doctor?.specialization,
+          reason: appt.reason,
+          visitType: appt.visitType,
+          date: appt.date,
+          time: appt.time,
+        },
+      });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to load patient details');
+    } finally {
+      setSlipLoadingId(null);
+    }
+  }
 
   async function act(appt, updates) {
     setBusyId(appt.id);
@@ -97,46 +133,56 @@ export default function Queue() {
                           </p>
                         </div>
                       </div>
-                      {!isDone && (
-                        <div className="flex items-center gap-1">
-                          {isServing ? (
-                            <>
+                      <div className="flex items-center gap-1">
+                        <button
+                          disabled={slipLoadingId === t.id}
+                          onClick={() => openSlip(t)}
+                          className="rounded p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                          title="Print registration slip"
+                        >
+                          <Printer size={16} />
+                        </button>
+                        {canManageQueue && !isDone && (
+                          <>
+                            {isServing ? (
+                              <>
+                                <button
+                                  disabled={busyId === t.id}
+                                  onClick={() => act(t, { status: 'completed' })}
+                                  className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                                  title="Mark done"
+                                >
+                                  <CheckCircle2 size={16} />
+                                </button>
+                                <button
+                                  disabled={busyId === t.id}
+                                  onClick={() => act(t, { calledAt: null })}
+                                  className="rounded p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                                  title="Undo call"
+                                >
+                                  <RotateCcw size={16} />
+                                </button>
+                              </>
+                            ) : (
                               <button
                                 disabled={busyId === t.id}
-                                onClick={() => act(t, { status: 'completed' })}
-                                className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
-                                title="Mark done"
+                                onClick={() => act(t, { calledAt: new Date().toISOString() })}
+                                className="flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                               >
-                                <CheckCircle2 size={16} />
+                                <PhoneCall size={13} /> Call
                               </button>
-                              <button
-                                disabled={busyId === t.id}
-                                onClick={() => act(t, { calledAt: null })}
-                                className="rounded p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
-                                title="Undo call"
-                              >
-                                <RotateCcw size={16} />
-                              </button>
-                            </>
-                          ) : (
+                            )}
                             <button
                               disabled={busyId === t.id}
-                              onClick={() => act(t, { calledAt: new Date().toISOString() })}
-                              className="flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                              onClick={() => act(t, { status: 'no-show' })}
+                              className="rounded p-1.5 text-rose-500 hover:bg-rose-50 disabled:opacity-50"
+                              title="Mark no-show"
                             >
-                              <PhoneCall size={13} /> Call
+                              <UserX size={16} />
                             </button>
-                          )}
-                          <button
-                            disabled={busyId === t.id}
-                            onClick={() => act(t, { status: 'no-show' })}
-                            className="rounded p-1.5 text-rose-500 hover:bg-rose-50 disabled:opacity-50"
-                            title="Mark no-show"
-                          >
-                            <UserX size={16} />
-                          </button>
-                        </div>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </li>
                   );
                 })}
@@ -145,6 +191,10 @@ export default function Queue() {
           ))}
         </div>
       )}
+
+      <Modal open={!!slip} onClose={() => setSlip(null)} title="Registration Slip" wide>
+        <RegistrationSlip patient={slip?.patient} visit={slip?.visit} />
+      </Modal>
     </div>
   );
 }

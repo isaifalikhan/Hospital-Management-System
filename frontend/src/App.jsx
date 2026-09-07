@@ -63,10 +63,13 @@ export default function App() {
           >
             <Route path="/" element={<Dashboard />} />
 
+            {/* Every role can reach the patient list — it's the reception
+                record (demographics + registration slip), not the chart. The
+                chart at /patients/:id stays narrower. */}
             <Route
               path="/patients"
               element={
-                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'pharmacist']}>
                   <Patients />
                 </ProtectedRoute>
               }
@@ -116,7 +119,7 @@ export default function App() {
             <Route
               path="/queue"
               element={
-                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'pharmacist']}>
                   <Queue />
                 </ProtectedRoute>
               }

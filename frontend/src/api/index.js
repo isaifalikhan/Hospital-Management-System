@@ -16,6 +16,9 @@ export const dashboardApi = {
 export const patientsApi = {
   list: (params) => client.get('/patients', { params }),
   get: (id) => client.get(`/patients/${id}`),
+  // Reception-collected fields only (see backend patientController.registration)
+  // — readable by every role, unlike the full chart `get` returns.
+  registration: (id) => client.get(`/patients/${id}/registration`),
   create: (data) => client.post('/patients', data),
   update: (id, data) => client.put(`/patients/${id}`, data),
   remove: (id) => client.delete(`/patients/${id}`),

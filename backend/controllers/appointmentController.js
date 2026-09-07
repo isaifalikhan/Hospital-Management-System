@@ -29,7 +29,10 @@ exports.list = async (req, res, next) => {
 exports.get = async (req, res, next) => {
   try {
     const appt = await Appointment.findByPk(req.params.id, {
-      include: [{ model: Patient }, { model: Doctor }],
+      include: [
+        { model: Patient, attributes: { exclude: ['portalPin'] } },
+        { model: Doctor },
+      ],
     });
     if (!appt) return res.status(404).json({ message: 'Appointment not found' });
     res.json(appt);

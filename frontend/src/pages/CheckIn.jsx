@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UserPlus, Search, CheckCircle2, Ticket, AlertCircle } from 'lucide-react';
+import { UserPlus, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { patientsApi, doctorsApi, appointmentsApi } from '../api';
 import PageHeader from '../components/PageHeader';
+import RegistrationSlip from '../components/RegistrationSlip';
 
 const emptyNewPatient = {
   name: '', dob: '', gender: 'male', bloodGroup: '', phone: '', email: '',
@@ -70,19 +71,24 @@ export default function CheckIn() {
 
     setSubmitting(true);
     try {
-      let patientId = selectedPatient?.id;
-      let patientName = selectedPatient?.name;
+      let patient = selectedPatient;
       if (mode === 'new') {
         const res = await patientsApi.create(newPatient);
-        patientId = res.data.id;
-        patientName = res.data.name;
+        patient = res.data;
       }
-      const apptRes = await appointmentsApi.create({ patientId, doctorId, reason, visitType: 'walk-in' });
+      const apptRes = await appointmentsApi.create({ patientId: patient.id, doctorId, reason, visitType: 'walk-in' });
       const doctor = doctors.find((d) => String(d.id) === String(doctorId));
       setConfirmation({
-        tokenNumber: apptRes.data.tokenNumber,
-        patientName: patientName || apptRes.data.Patient?.name,
-        doctorName: doctor?.name || apptRes.data.Doctor?.name,
+        patient,
+        visit: {
+          tokenNumber: apptRes.data.tokenNumber,
+          doctorName: doctor?.name || apptRes.data.Doctor?.name,
+          specialization: doctor?.specialization,
+          reason,
+          visitType: 'walk-in',
+          date: apptRes.data.date,
+          time: apptRes.data.time,
+        },
       });
     } catch (err) {
       setError(err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Failed to check in patient. Please try again.');
@@ -103,23 +109,22 @@ export default function CheckIn() {
       <PageHeader title="Check-In" subtitle="Register a walk-in patient, pick a doctor, and get a queue token" />
 
       {confirmation ? (
-        <div className="card mx-auto max-w-md p-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-            <CheckCircle2 size={26} />
+        <div className="mx-auto max-w-2xl space-y-4">
+          <div className="flex items-center gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 print:hidden">
+            <CheckCircle2 size={20} className="shrink-0 text-emerald-600" />
+            <span>
+              <strong>{confirmation.patient.name}</strong> is checked in and queued to see{' '}
+              {confirmation.visit.doctorName}. Print the slip below for the patient.
+            </span>
           </div>
-          <h2 className="text-lg font-semibold text-slate-900">Checked in!</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {confirmation.patientName} is queued to see {confirmation.doctorName}.
-          </p>
-          <div className="mx-auto mt-4 flex max-w-xs items-center justify-center gap-3 rounded-xl bg-indigo-50 px-5 py-4">
-            <Ticket size={22} className="text-indigo-600" />
-            <div className="text-left">
-              <p className="text-xs font-medium uppercase tracking-wide text-indigo-500">Token Number</p>
-              <p className="text-2xl font-bold text-indigo-700">#{confirmation.tokenNumber}</p>
-            </div>
+
+          <div className="card p-6">
+            <RegistrationSlip patient={confirmation.patient} visit={confirmation.visit} />
           </div>
-          <div className="mt-5 flex items-center justify-center gap-3">
+
+          <div className="flex items-center justify-center gap-3 print:hidden">
             <button className="btn-primary" onClick={checkInAnother}>Check in another patient</button>
+            <Link to={`/patients/${confirmation.patient.id}`} className="btn-secondary">Open Patient Chart</Link>
             <Link to="/queue" className="btn-secondary">View Queue</Link>
           </div>
         </div>
@@ -211,8 +216,28 @@ export default function CheckIn() {
                   <label className="label">Blood Group</label>
                   <input className="input" value={newPatient.bloodGroup} onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })} placeholder="e.g. O+" />
                 </div>
+                <div>
+                  <label className="label">Email</label>
+                  <input type="email" className="input" value={newPatient.email} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Address</label>
+                  <input className="input" value={newPatient.address} onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">Emergency Contact Name</label>
+                  <input className="input" value={newPatient.emergencyContactName} onChange={(e) => setNewPatient({ ...newPatient, emergencyContactName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">Emergency Contact Phone</label>
+                  <input className="input" value={newPatient.emergencyContactPhone} onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Allergies</label>
+                  <input className="input" value={newPatient.allergies} onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })} placeholder="e.g. Penicillin, None known" />
+                </div>
                 <p className="text-xs text-slate-400 sm:col-span-2">
-                  Full profile (address, allergies, emergency contact) can be filled in later from the Patients page.
+                  Everything here is printed on the patient's registration slip and can be edited later from the Patients page.
                 </p>
               </div>
             )}

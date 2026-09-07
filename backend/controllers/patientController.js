@@ -39,6 +39,24 @@ exports.list = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// The fields reception collects at the desk, and nothing else — no clinical
+// records, invoices or portal credentials. Every logged-in role can read this
+// projection (see routes/patientRoutes.js) so any staff member can look up
+// and reprint a patient's registration slip, while the full chart behind
+// `get` below stays limited to admin/doctor/receptionist.
+const REGISTRATION_ATTRIBUTES = [
+  'id', 'mrn', 'name', 'dob', 'gender', 'bloodGroup', 'phone', 'email', 'address',
+  'emergencyContactName', 'emergencyContactPhone', 'allergies', 'status', 'createdAt',
+];
+
+exports.registration = async (req, res, next) => {
+  try {
+    const patient = await Patient.findByPk(req.params.id, { attributes: REGISTRATION_ATTRIBUTES });
+    if (!patient) return res.status(404).json({ message: 'Patient not found' });
+    res.json(patient);
+  } catch (err) { next(err); }
+};
+
 exports.get = async (req, res, next) => {
   try {
     const patient = await Patient.findByPk(req.params.id, {

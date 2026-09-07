@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Eye, Download } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Eye, Download, Printer } from 'lucide-react';
 import { patientsApi, reportsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import StatusBadge from '../components/StatusBadge';
+import RegistrationSlip from '../components/RegistrationSlip';
 
 const emptyForm = {
   name: '', dob: '', gender: 'male', bloodGroup: '', phone: '', email: '',
@@ -17,6 +18,10 @@ export default function Patients() {
   const canEdit = ['admin', 'receptionist'].includes(user?.role);
   const canDelete = user?.role === 'admin';
   const canExport = ['admin', 'receptionist'].includes(user?.role);
+  // Every role reaches this page for the reception record and the printable
+  // registration slip; the full clinical chart behind /patients/:id doesn't
+  // open up with it.
+  const canViewChart = ['admin', 'doctor', 'receptionist'].includes(user?.role);
 
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
@@ -26,6 +31,7 @@ export default function Patients() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [slipPatient, setSlipPatient] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -156,9 +162,14 @@ export default function Patients() {
                   <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      <Link to={`/patients/${p.id}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="View">
-                        <Eye size={16} />
-                      </Link>
+                      {canViewChart && (
+                        <Link to={`/patients/${p.id}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="View">
+                          <Eye size={16} />
+                        </Link>
+                      )}
+                      <button onClick={() => setSlipPatient(p)} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="Print registration slip">
+                        <Printer size={16} />
+                      </button>
                       {canEdit && (
                         <button onClick={() => openEdit(p)} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="Edit">
                           <Pencil size={16} />
@@ -178,6 +189,10 @@ export default function Patients() {
         </table>
         </div>
       </div>
+
+      <Modal open={!!slipPatient} onClose={() => setSlipPatient(null)} title="Registration Slip" wide>
+        <RegistrationSlip patient={slipPatient} />
+      </Modal>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Patient' : 'New Patient'} wide>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
