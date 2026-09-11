@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const {
   sequelize, User, Department, Doctor, Patient, Appointment, MedicalRecord,
   Invoice, InvoiceItem, Medicine, StockTransaction, PrescriptionItem,
-  LabOrder, Admission, AuditLog,
+  LabOrder, LabTest, Admission, AuditLog,
 } = require('../models');
 
 async function seed() {
@@ -127,6 +127,16 @@ async function seed() {
       frequency: 'Twice daily', duration: '7 days', quantity: 14,
       instructions: 'Take after meals', dispensed: false,
     },
+  ]);
+
+  await LabTest.bulkCreate([
+    { name: 'Complete Blood Count (CBC)', price: 800, sampleType: 'Blood', referenceRange: 'See report' },
+    { name: 'Blood Glucose (Fasting)', price: 350, sampleType: 'Blood', referenceRange: '70-100 mg/dL' },
+    { name: 'Lipid Profile', price: 1500, sampleType: 'Blood', referenceRange: 'See report' },
+    { name: 'Liver Function Test (LFT)', price: 1800, sampleType: 'Blood', referenceRange: 'See report' },
+    { name: 'Urine Routine Examination', price: 400, sampleType: 'Urine', referenceRange: 'See report' },
+    { name: 'Chest X-Ray', price: 1200, sampleType: 'Imaging', referenceRange: 'N/A' },
+    { name: 'ECG', price: 900, sampleType: 'Imaging', referenceRange: 'N/A' },
   ]);
 
   await LabOrder.bulkCreate([

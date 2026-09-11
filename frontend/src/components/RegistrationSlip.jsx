@@ -90,6 +90,7 @@ export default function RegistrationSlip({ patient, visit }) {
         </Field>
         <Field label="Gender">{patient.gender && <span className="capitalize">{patient.gender}</span>}</Field>
         <Field label="CNIC">{patient.cnic}</Field>
+        <Field label="Blood Group">{patient.bloodGroup}</Field>
         <Field label="Patient Status">{patient.status && <span className="capitalize">{patient.status}</span>}</Field>
         <Field label="Phone">{patient.phone}</Field>
         <Field label="Email">{patient.email}</Field>

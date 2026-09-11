@@ -65,7 +65,15 @@ exports.get = async (req, res, next) => {
         { model: Appointment, include: [{ model: Doctor, attributes: ['id', 'name', 'specialization', 'consultationFee'] }] },
         { model: MedicalRecord, include: [{ model: Doctor, attributes: ['id', 'name'] }, { model: PrescriptionItem }] },
         { model: Invoice },
-        { model: LabOrder, include: [{ model: Doctor, attributes: ['id', 'name'] }] },
+        {
+          model: LabOrder,
+          include: [
+            { model: Doctor, attributes: ['id', 'name'] },
+            // The test's bill, so the chart shows what was charged and
+            // whether reception has collected it.
+            { model: Invoice, attributes: ['id', 'invoiceNumber', 'total', 'amountPaid', 'status', 'date'] },
+          ],
+        },
         { model: Admission, include: [{ model: Doctor, attributes: ['id', 'name'] }] },
         { model: Immunization },
       ],

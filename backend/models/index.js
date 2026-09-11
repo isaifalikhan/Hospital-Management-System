@@ -12,6 +12,7 @@ const Medicine = require('./Medicine');
 const StockTransaction = require('./StockTransaction');
 const PrescriptionItem = require('./PrescriptionItem');
 const LabOrder = require('./LabOrder');
+const LabTest = require('./LabTest');
 const Admission = require('./Admission');
 const AuditLog = require('./AuditLog');
 const StaffAttendance = require('./StaffAttendance');
@@ -71,6 +72,16 @@ LabOrder.belongsTo(Patient, { foreignKey: 'patientId' });
 Doctor.hasMany(LabOrder, { foreignKey: 'doctorId', onDelete: 'SET NULL' });
 LabOrder.belongsTo(Doctor, { foreignKey: 'doctorId' });
 
+// LabTest (catalogue) <-> LabOrder. SET NULL, not CASCADE: retiring a test
+// from the catalogue must never delete the orders already raised against it.
+LabTest.hasMany(LabOrder, { foreignKey: 'labTestId', onDelete: 'SET NULL' });
+LabOrder.belongsTo(LabTest, { foreignKey: 'labTestId' });
+
+// LabOrder <-> Invoice: the bill raised for the test, so reception can take
+// payment and the lab can see whether it's been paid.
+Invoice.hasMany(LabOrder, { foreignKey: 'invoiceId', onDelete: 'SET NULL' });
+LabOrder.belongsTo(Invoice, { foreignKey: 'invoiceId' });
+
 // Patient <-> Admission <-> Doctor
 Patient.hasMany(Admission, { foreignKey: 'patientId', onDelete: 'CASCADE' });
 Admission.belongsTo(Patient, { foreignKey: 'patientId' });
@@ -104,6 +115,7 @@ module.exports = {
   StockTransaction,
   PrescriptionItem,
   LabOrder,
+  LabTest,
   Admission,
   AuditLog,
   StaffAttendance,

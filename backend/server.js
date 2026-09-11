@@ -24,6 +24,7 @@ const invoiceRoutes = require('./routes/invoiceRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const labOrderRoutes = require('./routes/labOrderRoutes');
+const labTestRoutes = require('./routes/labTestRoutes');
 const immunizationRoutes = require('./routes/immunizationRoutes');
 const admissionRoutes = require('./routes/admissionRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
@@ -97,6 +98,7 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/lab-orders', labOrderRoutes);
+app.use('/api/lab-tests', labTestRoutes);
 app.use('/api/immunizations', immunizationRoutes);
 app.use('/api/admissions', admissionRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
@@ -135,16 +137,24 @@ async function start() {
     await sequelize.sync(); // creates tables if they don't exist
 
     // sync() creates missing tables but never alters existing ones, so a
-    // database created before Patient.cnic landed still has the old
-    // patients table and every read of the column would fail. Add it when
-    // it's absent. Done through the query interface rather than
+    // database created before one of these columns landed still has the old
+    // table and every read of the column would fail. Add whichever are
+    // absent. Done through the query interface rather than
     // "ALTER TABLE ... ADD COLUMN IF NOT EXISTS", which Postgres supports
     // and SQLite doesn't.
     const queryInterface = sequelize.getQueryInterface();
-    const patientColumns = await queryInterface.describeTable('patients');
-    if (!patientColumns.cnic) {
-      await queryInterface.addColumn('patients', 'cnic', { type: DataTypes.STRING, allowNull: true });
-      console.log('Added missing "cnic" column to patients');
+    const addedColumns = [
+      ['patients', 'cnic', { type: DataTypes.STRING, allowNull: true }],
+      ['lab_orders', 'price', { type: DataTypes.FLOAT, defaultValue: 0 }],
+      ['lab_orders', 'labTestId', { type: DataTypes.INTEGER, allowNull: true }],
+      ['lab_orders', 'invoiceId', { type: DataTypes.INTEGER, allowNull: true }],
+    ];
+    for (const [table, column, spec] of addedColumns) {
+      const columns = await queryInterface.describeTable(table);
+      if (!columns[column]) {
+        await queryInterface.addColumn(table, column, spec);
+        console.log(`Added missing "${column}" column to ${table}`);
+      }
     }
 
     // Enforces "one active appointment per doctor/date/time" at the DB level

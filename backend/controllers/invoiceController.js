@@ -1,11 +1,7 @@
 const { Invoice, InvoiceItem, Patient, Appointment } = require('../models');
 const { sequelize } = require('../models');
 const { logAudit } = require('../utils/audit');
-
-function generateInvoiceNumber() {
-  const ts = Date.now().toString().slice(-8);
-  return `INV${ts}`;
-}
+const { generateInvoiceNumber } = require('../utils/billing');
 
 function computeTotals(items, discount = 0, tax = 0) {
   const subtotal = items.reduce((sum, it) => sum + (Number(it.quantity) * Number(it.unitPrice)), 0);

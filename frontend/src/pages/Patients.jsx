@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, Eye, Download, Printer } from 'lucide-react';
-import { patientsApi, reportsApi } from '../api';
+import { patientsApi, appointmentsApi, reportsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
@@ -31,7 +31,8 @@ export default function Patients() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [slipPatient, setSlipPatient] = useState(null);
+  const [slip, setSlip] = useState(null);
+  const [slipLoadingId, setSlipLoadingId] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -88,6 +89,38 @@ export default function Patients() {
       await load();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to delete patient');
+    }
+  }
+
+  // Reprint what reception handed the patient: the registration details from
+  // this row plus their latest visit, so the slip carries the same doctor,
+  // token and fee as the original. Read off /appointments rather than the
+  // patient chart so every role that can reach this page can reprint.
+  async function openSlip(patient) {
+    setSlipLoadingId(patient.id);
+    try {
+      const res = await appointmentsApi.list({ patientId: patient.id });
+      const latest = res.data
+        .slice()
+        .sort((a, b) => `${b.date} ${b.time || ''}`.localeCompare(`${a.date} ${a.time || ''}`))[0];
+      setSlip({
+        patient,
+        visit: latest && {
+          tokenNumber: latest.tokenNumber,
+          doctorName: latest.Doctor?.name,
+          specialization: latest.Doctor?.specialization,
+          fee: latest.Doctor?.consultationFee,
+          reason: latest.reason,
+          visitType: latest.visitType,
+          date: latest.date,
+          time: latest.time,
+        },
+      });
+    } catch {
+      // Still worth printing the registration details on their own.
+      setSlip({ patient });
+    } finally {
+      setSlipLoadingId(null);
     }
   }
 
@@ -167,7 +200,12 @@ export default function Patients() {
                           <Eye size={16} />
                         </Link>
                       )}
-                      <button onClick={() => setSlipPatient(p)} className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="Print registration slip">
+                      <button
+                        onClick={() => openSlip(p)}
+                        disabled={slipLoadingId === p.id}
+                        className="rounded p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                        title="Print registration slip"
+                      >
                         <Printer size={16} />
                       </button>
                       {canEdit && (
@@ -190,8 +228,8 @@ export default function Patients() {
         </div>
       </div>
 
-      <Modal open={!!slipPatient} onClose={() => setSlipPatient(null)} title="Registration Slip" wide>
-        <RegistrationSlip patient={slipPatient} />
+      <Modal open={!!slip} onClose={() => setSlip(null)} title="Registration Slip" wide>
+        <RegistrationSlip patient={slip?.patient} visit={slip?.visit} />
       </Modal>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Patient' : 'New Patient'} wide>

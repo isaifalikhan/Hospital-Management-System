@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Stethoscope, CalendarClock, Receipt, Pill,
   UserCog, LogOut, HeartPulse, Building2, FlaskConical, BedDouble, ScrollText,
-  DatabaseBackup, Clock, CalendarDays, LineChart, Ticket, PhoneCall, KeyRound,
+  DatabaseBackup, Clock, CalendarDays, LineChart, Ticket, PhoneCall, KeyRound, TestTube,
   Menu, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,8 @@ const NAV_ITEMS = [
   { to: '/queue', label: 'Queue', icon: PhoneCall, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/patients', label: 'Patients', icon: Users, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/appointments', label: 'Appointments', icon: CalendarClock, roles: ['admin', 'doctor', 'receptionist'] },
-  { to: '/lab-orders', label: 'Lab Orders', icon: FlaskConical, roles: ['admin', 'doctor'] },
+  { to: '/lab-orders', label: 'Lab Orders', icon: FlaskConical, roles: ['admin', 'doctor', 'receptionist'] },
+  { to: '/lab-tests', label: 'Lab Test Prices', icon: TestTube, roles: ['admin'] },
   { to: '/admissions', label: 'Admissions', icon: BedDouble, roles: ['admin', 'doctor', 'receptionist'] },
   { to: '/doctors', label: 'Doctors', icon: Stethoscope, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
   { to: '/departments', label: 'Departments', icon: Building2, roles: ['admin'] },

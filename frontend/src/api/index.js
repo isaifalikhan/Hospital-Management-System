@@ -66,6 +66,16 @@ export const labOrdersApi = {
   remove: (id) => client.delete(`/lab-orders/${id}`),
 };
 
+// The orderable-test price list behind lab order billing. Everyone who deals
+// with a test bill can read it; only admins change prices (see
+// backend/routes/labTestRoutes.js).
+export const labTestsApi = {
+  list: (params) => client.get('/lab-tests', { params }),
+  create: (data) => client.post('/lab-tests', data),
+  update: (id, data) => client.put(`/lab-tests/${id}`, data),
+  remove: (id) => client.delete(`/lab-tests/${id}`),
+};
+
 export const immunizationsApi = {
   list: (params) => client.get('/immunizations', { params }),
   create: (data) => client.post('/immunizations', data),

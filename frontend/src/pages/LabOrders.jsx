@@ -2,10 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FlaskConical, Filter } from 'lucide-react';
 import { labOrdersApi } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { formatMoney } from '../utils/currency';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 
 export default function LabOrders() {
+  const { user } = useAuth();
+  // Reception is here for the bills, not the bench work: it can see every
+  // order and what it costs, but progressing a test and entering results
+  // belong to the lab (see backend/routes/labOrderRoutes.js).
+  const canWorkOrders = ['admin', 'doctor'].includes(user?.role);
+
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,7 +49,7 @@ export default function LabOrders() {
 
   return (
     <div>
-      <PageHeader title="Lab Orders" subtitle="Track ordered tests and enter results across all patients" />
+      <PageHeader title="Lab Orders" subtitle="Track ordered tests, their bills, and results across all patients" />
 
       <div className="mb-4 flex items-center gap-2">
         <Filter size={15} className="text-slate-400" />
@@ -65,14 +73,16 @@ export default function LabOrders() {
               <th className="px-4 py-3">Ordered</th>
               <th className="px-4 py-3">Priority</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Fee</th>
+              <th className="px-4 py-3">Bill</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+              <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
             ) : orders.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">No lab orders found.</td></tr>
+              <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400">No lab orders found.</td></tr>
             ) : (
               orders.map((o) => (
                 <tr key={o.id} className="hover:bg-slate-50">
@@ -86,11 +96,22 @@ export default function LabOrders() {
                     {o.priority === 'urgent' ? <span className="badge bg-rose-100 text-rose-700">Urgent</span> : <span className="badge bg-slate-100 text-slate-600">Routine</span>}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
+                  <td className="px-4 py-3 text-right text-slate-800">{formatMoney(o.price)}</td>
+                  <td className="px-4 py-3">
+                    {o.Invoice ? (
+                      <Link to="/billing" className="inline-flex items-center gap-1.5 hover:underline">
+                        <span className="font-mono text-xs text-slate-500">{o.Invoice.invoiceNumber}</span>
+                        <StatusBadge status={o.Invoice.status} />
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-slate-400">No charge</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    {o.status === 'ordered' && (
+                    {canWorkOrders && o.status === 'ordered' && (
                       <button onClick={() => handleInProgress(o)} className="text-xs text-indigo-600 hover:underline mr-2">In Progress</button>
                     )}
-                    {(o.status === 'ordered' || o.status === 'in_progress') && (
+                    {canWorkOrders && (o.status === 'ordered' || o.status === 'in_progress') && (
                       <button onClick={() => handleResult(o)} className="text-xs text-emerald-600 hover:underline">Enter Result</button>
                     )}
                   </td>

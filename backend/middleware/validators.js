@@ -177,7 +177,23 @@ const admissionValidators = {
 const labOrderValidators = {
   create: [
     body('patientId').isInt().withMessage('A valid patientId is required'),
-    body('testName').trim().notEmpty().withMessage('Test name is required'),
+    // testName is filled in from the catalogue when labTestId is given, so
+    // it's only required for a one-off test typed by hand.
+    body('testName').if(body('labTestId').not().exists({ values: 'falsy' }))
+      .trim().notEmpty().withMessage('Test name is required'),
+    body('labTestId').optional({ values: 'falsy' }).isInt().withMessage('A valid labTestId is required'),
+    body('price').optional({ values: 'falsy' }).isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  ],
+};
+
+const labTestValidators = {
+  create: [
+    body('name').trim().notEmpty().withMessage('Test name is required'),
+    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  ],
+  update: [
+    body('name').optional().trim().notEmpty().withMessage('Test name is required'),
+    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   ],
 };
 
@@ -264,6 +280,7 @@ module.exports = {
   medicineValidators,
   admissionValidators,
   labOrderValidators,
+  labTestValidators,
   shiftValidators,
   medicalRecordValidators,
   immunizationValidators,

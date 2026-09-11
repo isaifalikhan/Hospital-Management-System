@@ -5,7 +5,7 @@ import {
   ArrowLeft, Plus, FileText, FlaskConical, BedDouble, Receipt, CalendarClock,
   Trash2, CheckCircle2, LogOut as LogOutIcon, Eye, Printer, Video, Sparkles, Syringe,
 } from 'lucide-react';
-import { patientsApi, medicalRecordsApi, labOrdersApi, admissionsApi, medicinesApi, aiApi, immunizationsApi } from '../api';
+import { patientsApi, medicalRecordsApi, labOrdersApi, labTestsApi, admissionsApi, medicinesApi, aiApi, immunizationsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -33,7 +33,7 @@ function formatVitals(r) {
   return parts.join(' · ');
 }
 const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
-const emptyLabOrder = { testName: '', priority: 'routine', notes: '' };
+const emptyLabOrder = { labTestId: '', testName: '', price: '', priority: 'routine', notes: '' };
 const emptyAdmission = { ward: '', bedNumber: '', reason: '' };
 const emptyImmunization = { vaccineName: '', doseNumber: '', dateGiven: '', nextDueDate: '', administeredBy: '', batchNumber: '', notes: '' };
 
@@ -60,6 +60,7 @@ export default function PatientDetail() {
   const [labModalOpen, setLabModalOpen] = useState(false);
   const [labForm, setLabForm] = useState(emptyLabOrder);
   const [savingLab, setSavingLab] = useState(false);
+  const [labTests, setLabTests] = useState([]);
 
   const [admitModalOpen, setAdmitModalOpen] = useState(false);
   const [admitForm, setAdmitForm] = useState(emptyAdmission);
@@ -190,6 +191,28 @@ export default function PatientDetail() {
   }
 
   // --- Lab orders ---
+  // Same lazy-load shape as openRecordModal's medicines list: fetch the
+  // price list the first time someone actually orders a test.
+  function openLabModal() {
+    setLabForm(emptyLabOrder);
+    setLabModalOpen(true);
+    if (!labTests.length) {
+      labTestsApi.list({ activeOnly: 'true' }).then((res) => setLabTests(res.data)).catch(() => {});
+    }
+  }
+
+  // Picking a catalogue test fills in its price, which stays editable so the
+  // desk can waive or discount this one order without touching the catalogue.
+  function selectLabTest(labTestId) {
+    const test = labTests.find((t) => String(t.id) === String(labTestId));
+    setLabForm((f) => ({
+      ...f,
+      labTestId,
+      testName: test ? test.name : '',
+      price: test ? test.price : '',
+    }));
+  }
+
   async function handleAddLabOrder(e) {
     e.preventDefault();
     setSavingLab(true);
@@ -663,7 +686,7 @@ export default function PatientDetail() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Lab Orders</h2>
             {canOrderLab && (
-              <button className="btn-primary" onClick={() => setLabModalOpen(true)}>
+              <button className="btn-primary" onClick={openLabModal}>
                 <Plus size={16} /> Order Test
               </button>
             )}
@@ -677,6 +700,14 @@ export default function PatientDetail() {
                     <StatusBadge status={l.status} />
                   </div>
                   <p className="text-xs text-slate-500 mb-1">Ordered {l.orderedDate} by Dr. {l.Doctor?.name?.replace(/^Dr\.?\s*/, '') || 'N/A'} {l.priority === 'urgent' && <span className="text-rose-600 font-medium">(urgent)</span>}</p>
+                  {l.Invoice ? (
+                    <p className="mb-1 flex items-center gap-1.5 text-xs text-slate-500">
+                      <span>{formatMoney(l.price)} · {l.Invoice.invoiceNumber}</span>
+                      <StatusBadge status={l.Invoice.status} />
+                    </p>
+                  ) : l.price > 0 ? (
+                    <p className="mb-1 text-xs text-slate-500">{formatMoney(l.price)}</p>
+                  ) : null}
                   {l.result && <p className="text-xs text-slate-600">Result: {l.result}</p>}
                   {canOrderLab && l.status !== 'completed' && l.status !== 'cancelled' && (
                     <div className="mt-1 flex gap-2">
@@ -887,8 +918,26 @@ export default function PatientDetail() {
       <Modal open={labModalOpen} onClose={() => setLabModalOpen(false)} title="Order Lab Test">
         <form onSubmit={handleAddLabOrder} className="space-y-4">
           <div>
-            <label className="label">Test Name *</label>
-            <input required className="input" value={labForm.testName} onChange={(e) => setLabForm({ ...labForm, testName: e.target.value })} placeholder="e.g. Complete Blood Count" />
+            <label className="label">Test *</label>
+            <select className="input" value={labForm.labTestId} onChange={(e) => selectLabTest(e.target.value)}>
+              <option value="">Other (type the name below)</option>
+              {labTests.map((t) => (
+                <option key={t.id} value={t.id}>{t.name} — {formatMoney(t.price)}</option>
+              ))}
+            </select>
+          </div>
+          {!labForm.labTestId && (
+            <div>
+              <label className="label">Test Name *</label>
+              <input required className="input" value={labForm.testName} onChange={(e) => setLabForm({ ...labForm, testName: e.target.value })} placeholder="e.g. Complete Blood Count" />
+            </div>
+          )}
+          <div>
+            <label className="label">Price (Rs.)</label>
+            <input type="number" min="0" step="0.01" className="input" value={labForm.price} onChange={(e) => setLabForm({ ...labForm, price: e.target.value })} placeholder="0.00" />
+            <p className="mt-1 text-xs text-slate-400">
+              A bill for this amount is raised automatically and shows up on Billing for reception to collect. Leave it at 0 for a free test.
+            </p>
           </div>
           <div>
             <label className="label">Priority</label>

@@ -18,6 +18,7 @@ import Billing from './pages/Billing';
 import Pharmacy from './pages/Pharmacy';
 import StaffUsers from './pages/StaffUsers';
 import LabOrders from './pages/LabOrders';
+import LabTests from './pages/LabTests';
 import Admissions from './pages/Admissions';
 import AuditLog from './pages/AuditLog';
 import Backup from './pages/Backup';
@@ -125,11 +126,23 @@ export default function App() {
               }
             />
 
+            {/* Reception is included for the test bills — see the note in
+                backend/routes/labOrderRoutes.js. The catalogue that prices
+                those tests is admin-only. */}
             <Route
               path="/lab-orders"
               element={
-                <ProtectedRoute roles={['admin', 'doctor']}>
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
                   <LabOrders />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/lab-tests"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <LabTests />
                 </ProtectedRoute>
               }
             />
