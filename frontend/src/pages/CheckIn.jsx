@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader';
 import RegistrationSlip from '../components/RegistrationSlip';
 
 const emptyNewPatient = {
-  name: '', dob: '', gender: 'male', cnic: '', bloodGroup: '', phone: '', email: '',
+  name: '', dob: '', gender: 'male', cnic: '', phone: '', email: '',
   address: '', emergencyContactName: '', emergencyContactPhone: '', allergies: '', status: 'outpatient',
 };
 
@@ -216,10 +216,6 @@ export default function CheckIn() {
                 <div>
                   <label className="label">CNIC</label>
                   <input className="input" value={newPatient.cnic} onChange={(e) => setNewPatient({ ...newPatient, cnic: e.target.value })} placeholder="12345-1234567-1" />
-                </div>
-                <div>
-                  <label className="label">Blood Group</label>
-                  <input className="input" value={newPatient.bloodGroup} onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })} placeholder="e.g. O+" />
                 </div>
                 <div>
                   <label className="label">Email</label>
