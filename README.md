@@ -144,29 +144,43 @@ hospital-management-system/
 
 ## Getting Started
 
-You'll need **Node.js 18+** installed. Run the backend and frontend in two terminals.
+### Running it (Windows) - two steps
 
-### 1. Backend setup
+1. Install **Node.js** (the "LTS" download) from [nodejs.org](https://nodejs.org/en/download)
+   and click Next through the installer. One time, on the computer that will run the app.
+2. Double-click **`start.bat`**.
+
+That's the whole thing. The first run installs everything, builds the app, creates the
+settings file with its own random `JWT_SECRET`, loads the sample database, and opens your
+browser - a few minutes, and it needs internet. Every run after that starts in seconds,
+because it skips whatever is already done.
+
+The window that opens tells you the two addresses to use:
+
+- **this computer** - <http://localhost:5000>
+- **other PCs, tablets and phones on the same WiFi** - e.g. `http://192.168.1.23:5000`
+  (it prints the real one)
+
+Log in with `admin` / `password123`. Keep that window open while staff are using the app;
+closing it stops the app for everyone. If the app is already running, `start.bat` says so
+and just opens the browser instead of failing on a busy port. If Node.js isn't installed,
+it opens the download page and tells you what to do.
+
+To have the app come back by itself after a power cut, point a Windows Scheduled Task at
+`run-server.bat` (`start.bat` must have completed successfully at least once first).
+
+### Running it for development (hot reload, Mac/Linux)
+
+Two terminals, from the repo root:
 
 ```bash
-cd backend
-npm install
-cp .env.example .env
-npm run seed     # creates the SQLite DB and loads sample data
-npm run dev       # starts the API on http://localhost:5000 (or `npm start` without auto-reload)
+cd backend  && npm install && cp .env.example .env && npm run seed && npm run dev   # API -> :5000
+cd frontend && npm install && npm run dev                                          # app -> :5173
 ```
 
-### 2. Frontend setup
-
-```bash
-cd frontend
-npm install
-npm run dev       # starts the app on http://localhost:5173
-```
-
-Open **http://localhost:5173** in your browser. The Vite dev server proxies `/api` requests
-to the backend automatically (see `frontend/vite.config.js`), so no extra configuration is
-needed in development.
+Open **http://localhost:5173**. The Vite dev server proxies `/api` to the backend (see
+`frontend/vite.config.js`), so there's nothing else to configure. `npm run seed` is only
+needed the first time - it wipes and recreates the database.
 
 ### Demo login credentials
 

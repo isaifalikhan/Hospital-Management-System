@@ -111,11 +111,11 @@ export default function PatientPortal() {
   const past = appointments.filter((a) => a.status !== 'scheduled');
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen">
+      <header className="topbar">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <div className="tone-indigo flex h-9 w-9 items-center justify-center rounded-xl">
               <HeartPulse size={18} />
             </div>
             <div>

@@ -86,26 +86,26 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+          className="modal-backdrop fixed inset-0 z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`sidebar fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 -translate-x-full flex-col transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : ''
         }`}
       >
-        <div className="flex items-center justify-between gap-2 px-5 py-5 border-b border-slate-200">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200/60 px-5 py-5">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <div className="tone-indigo flex h-9 w-9 items-center justify-center rounded-xl">
               <HeartPulse size={20} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900 leading-tight">MediCare HMS</p>
+              <p className="text-sm font-bold leading-tight tracking-tight text-slate-900">MediCare HMS</p>
               <p className="text-xs text-slate-500">Hospital Management</p>
             </div>
           </div>
@@ -125,13 +125,7 @@ export default function Layout() {
               to={to}
               end={to === '/'}
               onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`
-              }
+              className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
             >
               <Icon size={18} />
               {label}
@@ -139,13 +133,13 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="border-t border-slate-200 p-4">
+        <div className="border-t border-slate-200/60 p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+            <div className="tone-indigo flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold">
               {user?.name?.charAt(0)?.toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">{user?.name}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{user?.name}</p>
               <span className={`badge ${roleColors[user?.role] || 'bg-slate-100 text-slate-700'} capitalize`}>
                 {user?.role}
               </span>
@@ -161,7 +155,7 @@ export default function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+        <header className="topbar flex items-center gap-3 px-4 py-3 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
@@ -169,10 +163,10 @@ export default function Layout() {
           >
             <Menu size={22} />
           </button>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <div className="tone-indigo flex h-8 w-8 items-center justify-center rounded-lg">
             <HeartPulse size={16} />
           </div>
-          <p className="text-sm font-semibold text-slate-900">MediCare HMS</p>
+          <p className="text-sm font-bold tracking-tight text-slate-900">MediCare HMS</p>
         </header>
 
         <main className="flex-1 overflow-y-auto">

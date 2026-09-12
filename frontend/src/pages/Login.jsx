@@ -50,20 +50,20 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white">
-            <HeartPulse size={26} />
+          <div className="tone-indigo mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl">
+            <HeartPulse size={27} />
           </div>
-          <h1 className="text-xl font-semibold text-slate-900">MediCare HMS</h1>
-          <p className="text-sm text-slate-500">Sign in to manage the hospital</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">MediCare HMS</h1>
+          <p className="mt-1 text-sm text-slate-500">Sign in to manage the hospital</p>
         </div>
 
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              <div className="flex items-start gap-2 rounded-lg border border-rose-200/70 bg-rose-50 px-3 py-2 text-sm text-rose-700 shadow-[inset_0_1px_0_rgb(255_255_255/0.9)]">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -99,7 +99,7 @@ export default function Login() {
 
         {SHOW_DEMO_ACCOUNTS && (
           <div className="card mt-4 p-4">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400">
               Demo accounts (password: password123)
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -107,10 +107,10 @@ export default function Login() {
                 <button
                   key={acc.username}
                   onClick={() => fillDemo(acc.username)}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
+                  className="chip-button"
                 >
-                  <p className="font-medium text-slate-700">{acc.role}</p>
-                  <p className="text-slate-500">{acc.username}</p>
+                  <span className="block text-xs font-bold text-slate-700">{acc.role}</span>
+                  <span className="block text-xs text-slate-400">{acc.username}</span>
                 </button>
               ))}
             </div>

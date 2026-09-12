@@ -85,13 +85,13 @@ export default function PublicBooking() {
   const selectedDoctor = doctors.find((d) => String(d.id) === String(form.doctorId));
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="min-h-screen px-4 py-10">
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white">
+          <div className="tone-indigo mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl">
             <HeartPulse size={26} />
           </div>
-          <h1 className="text-xl font-semibold text-slate-900">MediCare HMS</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">MediCare HMS</h1>
           <p className="text-sm text-slate-500">Book an appointment — no account needed</p>
         </div>
 

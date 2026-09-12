@@ -113,7 +113,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/setup', setupRoutes);
 
-// Serves the built frontend (frontend/dist, from `pnpm -C frontend run build`)
+// Serves the built frontend (frontend/dist, from `npm run build` in frontend/)
 // so the whole app can run as one process on one port for LAN/offline use —
 // a no-op if nobody's built it yet, so the normal split dev workflow
 // (Vite on :5173 + this server on :5000) is unaffected.
@@ -207,6 +207,32 @@ async function start() {
        ON "appointments" ("doctorId", "date", "time")
        WHERE "status" <> 'cancelled' AND "visitType" = 'scheduled'`
     );
+    // One queue token per patient per day, hospital-wide. The app allocates
+    // "highest + 1" (appointmentController.create), which two simultaneous
+    // check-ins can both read before either writes — this is what stops them
+    // both getting the same number, with the controller retrying on the
+    // collision. Cancelled walk-ins are included: their token stays spent,
+    // because the patient is holding a printed chalan showing it.
+    // Non-fatal: any database that issued walk-in tokens before this release
+    // numbered them per doctor, so it can legitimately hold two #1s for the
+    // same day and the index won't build. Tokens issued from now on are still
+    // unique — the app allocates them hospital-wide — they just aren't
+    // DB-enforced until the historical duplicates are renumbered or aged out.
+    try {
+      await sequelize.query('DROP INDEX IF EXISTS appointments_walkin_date_token');
+      await sequelize.query(
+        `CREATE UNIQUE INDEX appointments_walkin_date_token
+         ON "appointments" ("date", "tokenNumber")
+         WHERE "visitType" = 'walk-in'`
+      );
+    } catch (err) {
+      console.warn(
+        'Could not create the unique walk-in token index — the appointments table still holds '
+        + 'duplicate (date, tokenNumber) pairs from per-doctor numbering. New tokens remain unique. '
+        + `Details: ${err.message}`
+      );
+    }
+
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);
       startReminderScheduler();

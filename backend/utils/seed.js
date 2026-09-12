@@ -23,6 +23,19 @@ async function seed() {
      ON "appointments" ("doctorId", "date", "time")
      WHERE "status" <> 'cancelled' AND "visitType" = 'scheduled'`
   );
+  // One queue token per patient per day, hospital-wide. The app allocates
+  // "highest + 1" (appointmentController.create), which two simultaneous
+  // check-ins can both read before either writes — this is what stops them
+  // both getting the same number, with the controller retrying on the
+  // collision. Cancelled walk-ins are included: their token stays spent,
+  // because the patient is holding a printed chalan showing it.
+  await sequelize.query('DROP INDEX IF EXISTS appointments_walkin_date_token');
+  await sequelize.query(
+    `CREATE UNIQUE INDEX appointments_walkin_date_token
+     ON "appointments" ("date", "tokenNumber")
+     WHERE "visitType" = 'walk-in'`
+  );
+
   console.log('Database reset. Seeding sample data...');
 
   const password = await bcrypt.hash('password123', 10);

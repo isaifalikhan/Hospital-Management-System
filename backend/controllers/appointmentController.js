@@ -54,14 +54,39 @@ exports.get = async (req, res, next) => {
 // out: they're made ahead of time (including by patients themselves through
 // the portal and the public page), and billing a visit nobody has turned up
 // for yet would just fill the billing queue with invoices to cancel.
-exports.create = async (req, res, next) => {
+// Retries exist only for the walk-in token race — see the catch below. A busy
+// front desk can have several receptionists checking patients in at once, and
+// every one of them that loses the race retries, so allow enough attempts to
+// clear a realistic burst.
+const MAX_TOKEN_ATTEMPTS = 12;
+const TOKEN_INDEX = 'appointments_walkin_date_token';
+
+// Sequelize reports a unique violation differently per dialect: Postgres puts
+// the index name in `constraint`/`message`, SQLite names the columns instead.
+// Check every shape rather than assuming one.
+function isTokenCollision(err) {
+  if (err?.parent?.constraint === TOKEN_INDEX) return true;
+  if (Object.keys(err?.fields || {}).some((f) => /tokenNumber/i.test(f))) return true;
+  const text = `${err?.parent?.message || ''} ${err?.message || ''}`;
+  return new RegExp(`${TOKEN_INDEX}|tokenNumber`, 'i').test(text);
+}
+
+// A short, jittered pause before retrying. Without it every loser of a race
+// re-reads the same max at the same moment and collides all over again.
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Returns { retry } to ask for another attempt, or { status, body } to answer
+// the request. Kept separate from the exported handler so a token collision
+// can roll back and start cleanly: Postgres aborts a transaction on a
+// constraint error, so retrying inside the same one isn't an option.
+async function attemptCreate(req, attempt) {
   const t = await sequelize.transaction();
   try {
     const { patientId, doctorId } = req.body;
     const visitType = req.body.visitType === 'walk-in' ? 'walk-in' : 'scheduled';
     if (!patientId || !doctorId) {
       await t.rollback();
-      return res.status(400).json({ message: 'patientId and doctorId are required' });
+      return { status: 400, body: { message: 'patientId and doctorId are required' } };
     }
 
     const payload = { ...req.body, visitType };
@@ -78,8 +103,14 @@ exports.create = async (req, res, next) => {
       const now = new Date();
       payload.date = now.toISOString().slice(0, 10);
       payload.time = now.toTimeString().slice(0, 5);
+      // One sequence for the whole hospital per day, not one per doctor.
+      // Per-doctor numbering meant two patients seeing different doctors both
+      // walked out holding a chalan reading "Token #1", so the number on the
+      // slip identified nobody. Cancelled and no-show walk-ins keep their
+      // number — the patient is holding a printed copy of it, so it must
+      // never be handed to someone else.
       const last = await Appointment.findOne({
-        where: { doctorId, date: payload.date, visitType: 'walk-in' },
+        where: { date: payload.date, visitType: 'walk-in' },
         order: [['tokenNumber', 'DESC']],
         transaction: t,
       });
@@ -88,7 +119,7 @@ exports.create = async (req, res, next) => {
       const { date, time } = req.body;
       if (!date || !time) {
         await t.rollback();
-        return res.status(400).json({ message: 'date and time are required for a scheduled appointment' });
+        return { status: 400, body: { message: 'date and time are required for a scheduled appointment' } };
       }
       const clash = await Appointment.findOne({
         where: { doctorId, date, time, status: { [Op.ne]: 'cancelled' } },
@@ -96,7 +127,7 @@ exports.create = async (req, res, next) => {
       });
       if (clash) {
         await t.rollback();
-        return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+        return { status: 409, body: { message: 'This doctor already has an appointment at that date and time.' } };
       }
       payload.tokenNumber = null;
     }
@@ -113,7 +144,20 @@ exports.create = async (req, res, next) => {
     } catch (err) {
       await t.rollback();
       if (err.name === 'SequelizeUniqueConstraintError') {
-        return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
+        // Two front desks checking someone in at the same instant both read
+        // the same highest token before either wrote. The unique index caught
+        // it; retrying re-reads and takes the next number.
+        //
+        // Identified by index name as well as column: Postgres reports
+        // 'duplicate key value violates unique constraint
+        // "appointments_walkin_date_token"' and never names the column, so
+        // matching on "tokenNumber" alone silently missed every collision and
+        // returned the double-booking message instead.
+        if (visitType === 'walk-in' && isTokenCollision(err)) {
+          if (attempt < MAX_TOKEN_ATTEMPTS - 1) return { retry: true };
+          return { status: 409, body: { message: 'Could not allocate a queue token — please try again.' } };
+        }
+        return { status: 409, body: { message: 'This doctor already has an appointment at that date and time.' } };
       }
       throw err;
     }
@@ -162,11 +206,22 @@ exports.create = async (req, res, next) => {
         ? `Checked in walk-in patient #${patientId} with doctor #${doctorId} — token #${payload.tokenNumber}${fee > 0 ? ` — billed Rs. ${fee.toFixed(2)}` : ''}`
         : `Booked appointment for patient #${patientId} with doctor #${doctorId} on ${payload.date} ${payload.time}`,
     });
-    res.status(201).json(full);
+    return { status: 201, body: full };
   } catch (err) {
     await t.rollback();
-    next(err);
+    throw err;
   }
+}
+
+exports.create = async (req, res, next) => {
+  try {
+    for (let attempt = 0; attempt < MAX_TOKEN_ATTEMPTS; attempt++) {
+      const outcome = await attemptCreate(req, attempt);
+      if (!outcome.retry) return res.status(outcome.status).json(outcome.body);
+      await sleep(5 + Math.floor(Math.random() * 25));
+    }
+    return res.status(409).json({ message: 'Could not allocate a queue token — please try again.' });
+  } catch (err) { next(err); }
 };
 
 exports.update = async (req, res, next) => {

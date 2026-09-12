@@ -1,52 +1,398 @@
 @import "tailwindcss";
 
+/* The app's typeface. The <link> lives in index.html; if the network can't
+   reach Google Fonts (a LAN-only install), the stack falls back to the
+   platform UI font and every size/weight below still holds. */
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
   color-scheme: light;
+
+  /* One gloss recipe, reused by every raised surface: a hairline ring for the
+     edge, a lit top edge, a 1px contact shadow and a wide soft cast. Layering
+     these is what reads as glass — a single blurry shadow does not. */
+  --ring: 0 0 0 1px rgb(148 163 184 / 0.15);
+  --sheen: inset 0 1px 0 rgb(255 255 255 / 0.95);
+  --lift: 0 1px 2px rgb(15 23 42 / 0.04), 0 16px 34px -22px rgb(15 23 42 / 0.28);
 }
 
+/* Glass needs something to be glass against, so the flat bg-slate-50 page is
+   replaced by three low-saturation washes over a cool white. Full-screen page
+   roots (Layout, Login, the patient portal) stay transparent so this shows. */
 body {
-  @apply bg-slate-50 text-slate-800;
+  @apply text-slate-800 antialiased;
+  background-color: #eef1f8;
+  background-image:
+    radial-gradient(880px 520px at 12% -10%, rgb(129 140 248 / 0.28), transparent 62%),
+    radial-gradient(720px 460px at 92% 2%, rgb(56 189 248 / 0.2), transparent 58%),
+    radial-gradient(680px 440px at 62% 106%, rgb(167 139 250 / 0.16), transparent 62%),
+    linear-gradient(180deg, #fbfcfe 0%, #eef1f8 100%);
+  background-attachment: fixed;
 }
+
+/* ── Surfaces ─────────────────────────────────────────────────────────── */
 
 .card {
-  @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  @apply rounded-xl;
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.95) 0%,
+    rgb(255 255 255 / 0.76) 100%
+  );
+  border: 1px solid rgb(255 255 255 / 0.9);
+  box-shadow: var(--ring), var(--sheen), var(--lift);
+  /* Deliberately no backdrop-filter: it would make every card a containing
+     block for position:fixed descendants (the modals several pages render
+     inside a card), and there is only a smooth gradient behind it to blur. */
 }
 
+/* The frosted left rail. Translucent on mobile too, where it overlays the
+   page — the blur keeps the content behind it readable as texture. */
+.sidebar {
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.88) 0%,
+    rgb(255 255 255 / 0.72) 100%
+  );
+  border-right: 1px solid rgb(148 163 184 / 0.22);
+  box-shadow:
+    inset 1px 0 0 rgb(255 255 255 / 0.7),
+    8px 0 28px -20px rgb(15 23 42 / 0.35);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.topbar {
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.92) 0%,
+    rgb(255 255 255 / 0.76) 100%
+  );
+  border-bottom: 1px solid rgb(148 163 184 / 0.22);
+  box-shadow: var(--sheen), 0 8px 20px -18px rgb(15 23 42 / 0.5);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.modal-backdrop {
+  background-color: rgb(15 23 42 / 0.35);
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+/* Opaque under the gradient: a modal sits over page content, not over the
+   page wash, so it must not let that content read through. */
+.modal-panel {
+  @apply rounded-2xl;
+  background-color: #fff;
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.98) 0%,
+    rgb(248 250 252 / 0.92) 100%
+  );
+  border: 1px solid rgb(255 255 255 / 0.9);
+  box-shadow: var(--ring), var(--sheen), 0 30px 60px -25px rgb(15 23 42 / 0.45);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+/* The sheen is the first background-image layer rather than a ::after overlay,
+   so it never washes out the label sitting on top of it. */
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700;
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50;
+  border: 1px solid #4338ca;
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0) 48%),
+    linear-gradient(180deg, #7b79f7 0%, #4f46e5 54%, #4238c9 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.42),
+    inset 0 -9px 16px -12px rgb(30 27 75 / 0.9),
+    0 10px 20px -10px rgb(79 70 229 / 0.6),
+    0 2px 4px rgb(15 23 42 / 0.12);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.26) 0%, rgb(255 255 255 / 0) 48%),
+    linear-gradient(180deg, #6f6df5 0%, #4338ca 54%, #372fb0 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.38),
+    0 14px 26px -10px rgb(79 70 229 / 0.7),
+    0 2px 4px rgb(15 23 42 / 0.14);
+}
+
+.btn-primary:active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 5px rgb(30 27 75 / 0.45),
+    0 2px 6px -3px rgb(79 70 229 / 0.5);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white text-slate-700 border border-slate-300 hover:bg-slate-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 transition-all disabled:cursor-not-allowed disabled:opacity-50;
+  border: 1px solid rgb(148 163 184 / 0.42);
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.98) 0%,
+    rgb(241 245 249 / 0.72) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 1px 2px rgb(15 23 42 / 0.05),
+    0 6px 14px -12px rgb(15 23 42 / 0.4);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: rgb(148 163 184 / 0.55);
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.98) 0%,
+    rgb(226 232 240 / 0.85) 100%
+  );
+}
+
+.btn-secondary:active:not(:disabled) {
+  box-shadow: inset 0 2px 4px rgb(15 23 42 / 0.08);
+}
+
+/* A secondary surface that is a block, not a row — the login screen's
+   one-click demo accounts, where the label stacks over the username. */
+.chip-button {
+  @apply block w-full rounded-lg px-3 py-2 text-left transition-all;
+  border: 1px solid rgb(148 163 184 / 0.3);
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.9) 0%,
+    rgb(248 250 252 / 0.6) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.chip-button:hover {
+  border-color: rgb(99 102 241 / 0.35);
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.95) 0%,
+    rgb(238 242 255 / 0.8) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 4px 10px -6px rgb(79 70 229 / 0.4);
 }
 
 .btn-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-rose-600 text-white hover:bg-rose-700;
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50;
+  border: 1px solid #be123c;
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0) 48%),
+    linear-gradient(180deg, #fb7185 0%, #e11d48 54%, #be123c 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 0 -9px 16px -12px rgb(76 5 25 / 0.9),
+    0 10px 20px -10px rgb(225 29 72 / 0.55),
+    0 2px 4px rgb(15 23 42 / 0.12);
 }
 
+.btn-danger:hover:not(:disabled) {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.26) 0%, rgb(255 255 255 / 0) 48%),
+    linear-gradient(180deg, #f4576f 0%, #be123c 54%, #9f0f33 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.36),
+    0 14px 26px -10px rgb(225 29 72 / 0.6),
+    0 2px 4px rgb(15 23 42 / 0.14);
+}
+
+/* ── Fields ───────────────────────────────────────────────────────────── */
+
+/* Inset shadow reads as recessed glass — the opposite of the raised surfaces
+   above, which is what tells a field apart from a button at a glance. */
 .input {
-  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500;
+  @apply w-full rounded-lg px-3 py-2 text-sm text-slate-900 transition;
+  border: 1px solid rgb(148 163 184 / 0.45);
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.98) 0%,
+    rgb(255 255 255 / 0.76) 100%
+  );
+  box-shadow:
+    inset 0 1px 2px rgb(15 23 42 / 0.05),
+    0 1px 0 rgb(255 255 255 / 0.8);
+}
+
+.input::placeholder {
+  @apply text-slate-400;
+}
+
+.input:focus {
+  @apply outline-none;
+  border-color: #6366f1;
+  box-shadow:
+    inset 0 1px 2px rgb(15 23 42 / 0.04),
+    0 0 0 4px rgb(99 102 241 / 0.16),
+    0 2px 8px -2px rgb(79 70 229 / 0.35);
+}
+
+.input:disabled {
+  @apply cursor-not-allowed text-slate-400;
+  background-image: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .label {
-  @apply block text-sm font-medium text-slate-700 mb-1;
+  @apply mb-1.5 block text-sm font-semibold text-slate-700;
 }
 
+/* ── Badges ───────────────────────────────────────────────────────────── */
+
+/* The tint still comes from the Tailwind bg-* class at each call site; this
+   only layers a highlight on top of it, so every existing badge colour —
+   status, role, lab flag, audit action — turns glossy without being touched. */
 .badge {
-  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.55) 0%,
+    rgb(255 255 255 / 0) 100%
+  );
+  border: 1px solid rgb(15 23 42 / 0.06);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.8),
+    0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+/* ── Stat card icon tiles ─────────────────────────────────────────────── */
+
+/* Filled gradient chips replace the flat bg-*-50 / text-*-600 pairs. Same
+   44px box, same radius — only the fill changes. See StatCard.jsx. */
+.tone-indigo,
+.tone-emerald,
+.tone-sky,
+.tone-amber,
+.tone-rose {
+  @apply text-white;
+}
+
+.tone-indigo {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0) 46%),
+    linear-gradient(160deg, #8b90f9 0%, #4f46e5 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 8px 16px -8px rgb(79 70 229 / 0.7);
+}
+
+.tone-emerald {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0) 46%),
+    linear-gradient(160deg, #34d399 0%, #059669 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 8px 16px -8px rgb(5 150 105 / 0.65);
+}
+
+.tone-sky {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0) 46%),
+    linear-gradient(160deg, #38bdf8 0%, #0284c7 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 8px 16px -8px rgb(2 132 199 / 0.65);
+}
+
+.tone-amber {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0) 46%),
+    linear-gradient(160deg, #fbbf24 0%, #d97706 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 8px 16px -8px rgb(217 119 6 / 0.6);
+}
+
+.tone-rose {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0) 46%),
+    linear-gradient(160deg, #fb7185 0%, #e11d48 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 8px 16px -8px rgb(225 29 72 / 0.6);
+}
+
+/* ── Sidebar navigation ───────────────────────────────────────────────── */
+
+.nav-item {
+  @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-500 transition;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  @apply text-slate-900;
+  border-color: rgb(148 163 184 / 0.24);
+  background-image: linear-gradient(
+    180deg,
+    rgb(241 245 249 / 0.95) 0%,
+    rgb(226 232 240 / 0.7) 100%
+  );
+}
+
+/* Last so it wins over :hover — the active item does not change on hover. */
+.nav-item-active,
+.nav-item-active:hover {
+  @apply text-indigo-700;
+  border-color: rgb(99 102 241 / 0.28);
+  background-image: linear-gradient(
+    180deg,
+    rgb(99 102 241 / 0.18) 0%,
+    rgb(79 70 229 / 0.09) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.85),
+    0 2px 6px -2px rgb(79 70 229 / 0.28);
+}
+
+/* ── Tables inside cards ──────────────────────────────────────────────── */
+
+/* Generic so the thirteen list pages keep their existing markup: the header's
+   bg-slate-50 stays as the base colour and picks up a gradient and a lit edge,
+   and row hover gains the indigo tint the rest of the UI uses. */
+.card table thead {
+  background-image: linear-gradient(
+    180deg,
+    rgb(248 250 252 / 0.95) 0%,
+    rgb(241 245 249 / 0.72) 100%
+  );
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+.card table tbody tr {
+  transition: background-image 120ms ease;
+}
+
+.card table tbody tr:hover {
+  background-image: linear-gradient(
+    180deg,
+    rgb(99 102 241 / 0.07) 0%,
+    rgb(99 102 241 / 0.03) 100%
+  );
 }
 
 /* Print styles: used to print a single invoice out of its modal (see Billing.jsx).
    Everything is hidden except the marked print area, which is then repositioned
    to fill the printed page, escaping the modal's max-height/overflow clipping. */
 @media print {
+  body {
+    background: #fff;
+  }
+
   body * {
     visibility: hidden;
   }
+
   #invoice-print-area,
   #invoice-print-area * {
     visibility: visible;
   }
+
   #invoice-print-area {
     position: fixed;
     inset: 0;
@@ -66,6 +412,7 @@ body {
   .print-area * {
     visibility: visible;
   }
+
   .print-area {
     position: fixed;
     inset: 0;
