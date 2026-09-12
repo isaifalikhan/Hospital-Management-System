@@ -9,9 +9,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-const { DataTypes } = require('sequelize');
 const { sequelize } = require('./models');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
+const { syncSchema, ensureSchema } = require('./utils/schema');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -85,6 +85,23 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/public/appointments', publicBookingLimiter);
 app.use('/api/patient-portal/login', portalLoginLimiter);
 
+// Vercel calls the exported app per request and never runs start(), so the
+// schema work has no boot step to hang off. Do it on first use instead:
+// memoised, so it costs one round of checks per cold start, not per request.
+// Without this the deployed app can create tables but never alter them, and
+// any column added after its database was created 500s with
+// `column "<name>" does not exist`.
+if (process.env.VERCEL) {
+  app.use('/api', async (req, res, next) => {
+    try {
+      await ensureSchema();
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
 app.use('/api/auth', authRoutes);
@@ -148,91 +165,7 @@ const PORT = process.env.PORT || 5000;
 
 async function start() {
   try {
-    await sequelize.authenticate();
-    await sequelize.sync(); // creates tables if they don't exist
-
-    // sync() creates missing tables but never alters existing ones, so a
-    // database created before one of these columns landed still has the old
-    // table and every read of the column would fail. Add whichever are
-    // absent. Done through the query interface rather than
-    // "ALTER TABLE ... ADD COLUMN IF NOT EXISTS", which Postgres supports
-    // and SQLite doesn't.
-    const queryInterface = sequelize.getQueryInterface();
-    const addedColumns = [
-      ['patients', 'cnic', { type: DataTypes.STRING, allowNull: true }],
-      ['lab_orders', 'price', { type: DataTypes.FLOAT, defaultValue: 0 }],
-      ['lab_orders', 'labTestId', { type: DataTypes.INTEGER, allowNull: true }],
-      ['lab_orders', 'invoiceId', { type: DataTypes.INTEGER, allowNull: true }],
-      ['lab_tests', 'parameters', { type: DataTypes.JSON, allowNull: true }],
-    ];
-    for (const [table, column, spec] of addedColumns) {
-      const columns = await queryInterface.describeTable(table);
-      if (!columns[column]) {
-        await queryInterface.addColumn(table, column, spec);
-        console.log(`Added missing "${column}" column to ${table}`);
-      }
-    }
-
-    // Postgres stores an ENUM as its own named type, so a database created
-    // before the 'lab' role existed rejects that value until the type is
-    // widened — sync() won't do it. SQLite needs nothing here: it emits the
-    // column as plain TEXT with no CHECK constraint, so any value is accepted.
-    // Warn rather than throw, so a naming surprise can't stop the server
-    // booting — the only thing that breaks is creating lab accounts.
-    if (sequelize.getDialect() === 'postgres') {
-      try {
-        await sequelize.query(`ALTER TYPE "enum_users_role" ADD VALUE IF NOT EXISTS 'lab'`);
-      } catch (err) {
-        console.warn('Could not add the "lab" value to enum_users_role:', err.message);
-      }
-    }
-
-    // Enforces "one active appointment per doctor/date/time" at the DB level
-    // so two concurrent booking requests can't both pass the app-level clash
-    // check and double-book the same slot. Cancelled appointments are
-    // excluded so a freed-up slot can be rebooked, and walk-ins are excluded
-    // entirely since they're queued (by tokenNumber), not slot-booked — two
-    // walk-ins for the same doctor legitimately share a check-in "time".
-    // Dropped and recreated (not just IF NOT EXISTS) so a database that
-    // already has the pre-visitType version of this index picks up the new
-    // WHERE clause instead of silently keeping the old one.
-    // Identifiers must be quoted: Sequelize creates "doctorId"/"visitType"
-    // case-preserved, but an unquoted identifier gets folded to lowercase by
-    // Postgres (SQLite doesn't do this, which is why this only broke here)
-    // and wouldn't match -- this previously crashed start() on every Vercel
-    // cold start with Postgres connected ("column \"visittype\" does not exist").
-    await sequelize.query('DROP INDEX IF EXISTS appointments_doctor_date_time_active');
-    await sequelize.query(
-      `CREATE UNIQUE INDEX appointments_doctor_date_time_active
-       ON "appointments" ("doctorId", "date", "time")
-       WHERE "status" <> 'cancelled' AND "visitType" = 'scheduled'`
-    );
-    // One queue token per patient per day, hospital-wide. The app allocates
-    // "highest + 1" (appointmentController.create), which two simultaneous
-    // check-ins can both read before either writes — this is what stops them
-    // both getting the same number, with the controller retrying on the
-    // collision. Cancelled walk-ins are included: their token stays spent,
-    // because the patient is holding a printed chalan showing it.
-    // Non-fatal: any database that issued walk-in tokens before this release
-    // numbered them per doctor, so it can legitimately hold two #1s for the
-    // same day and the index won't build. Tokens issued from now on are still
-    // unique — the app allocates them hospital-wide — they just aren't
-    // DB-enforced until the historical duplicates are renumbered or aged out.
-    try {
-      await sequelize.query('DROP INDEX IF EXISTS appointments_walkin_date_token');
-      await sequelize.query(
-        `CREATE UNIQUE INDEX appointments_walkin_date_token
-         ON "appointments" ("date", "tokenNumber")
-         WHERE "visitType" = 'walk-in'`
-      );
-    } catch (err) {
-      console.warn(
-        'Could not create the unique walk-in token index — the appointments table still holds '
-        + 'duplicate (date, tokenNumber) pairs from per-doctor numbering. New tokens remain unique. '
-        + `Details: ${err.message}`
-      );
-    }
-
+    await syncSchema();
     app.listen(PORT, () => {
       console.log(`HMS backend running on http://localhost:${PORT}`);
       startReminderScheduler();
@@ -249,8 +182,9 @@ async function start() {
 // both wrong on Vercel: there's no port to bind (the exported app is called
 // directly per-request), and exiting the process would kill every request
 // the function happened to be handling, not just this one connection
-// attempt. Schema creation there is handled once via GET /api/setup/seed
-// (routes/setupRoutes.js) instead of on every cold start.
+// attempt. The schema there is brought up by the ensureSchema() middleware
+// above instead — GET /api/setup/seed (routes/setupRoutes.js) is only for
+// loading demo data, and force-reseeding through it destroys everything.
 if (!process.env.VERCEL) {
   start();
 }
