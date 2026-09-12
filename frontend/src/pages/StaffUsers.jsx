@@ -175,6 +175,7 @@ export default function StaffUsers() {
                 <option value="doctor">Doctor</option>
                 <option value="receptionist">Receptionist</option>
                 <option value="pharmacist">Pharmacist</option>
+                <option value="lab">Lab Technician</option>
               </select>
             </div>
             <div>

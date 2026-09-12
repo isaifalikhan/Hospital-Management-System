@@ -110,6 +110,8 @@ export default function Patients() {
           doctorName: latest.Doctor?.name,
           specialization: latest.Doctor?.specialization,
           fee: latest.Doctor?.consultationFee,
+          invoiceNumber: latest.Invoice?.invoiceNumber,
+          invoiceStatus: latest.Invoice?.status,
           reason: latest.reason,
           visitType: latest.visitType,
           date: latest.date,

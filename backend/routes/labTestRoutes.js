@@ -10,7 +10,7 @@ router.use(authenticate);
 // Readable by everyone who works with test bills: doctors pick from the
 // catalogue when ordering, reception quotes and collects the fee, and the
 // lab checks what was charged. Only admins maintain the price list.
-router.get('/', authorize('admin', 'doctor', 'receptionist'), labTestController.list);
+router.get('/', authorize('admin', 'doctor', 'receptionist', 'lab'), labTestController.list);
 
 router.use(authorize('admin'));
 

@@ -17,7 +17,7 @@ const userValidators = {
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('username').trim().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('role').isIn(['admin', 'doctor', 'receptionist', 'pharmacist']).withMessage('Invalid role'),
+    body('role').isIn(['admin', 'doctor', 'receptionist', 'pharmacist', 'lab']).withMessage('Invalid role'),
     body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
     // Optional — only meaningful when role === 'doctor'. userController.create
     // uses these to also create (or, via doctorId, link) a Doctor profile in
@@ -34,7 +34,7 @@ const userValidators = {
     body('availableDays').optional({ values: 'falsy' }).custom((value) => validAvailableDays(value)),
   ],
   update: [
-    body('role').optional().isIn(['admin', 'doctor', 'receptionist', 'pharmacist']).withMessage('Invalid role'),
+    body('role').optional().isIn(['admin', 'doctor', 'receptionist', 'pharmacist', 'lab']).withMessage('Invalid role'),
     body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
     body('password').optional({ values: 'falsy' }).isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   ],

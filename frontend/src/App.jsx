@@ -70,7 +70,7 @@ export default function App() {
             <Route
               path="/patients"
               element={
-                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'pharmacist']}>
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'pharmacist', 'lab']}>
                   <Patients />
                 </ProtectedRoute>
               }
@@ -120,7 +120,7 @@ export default function App() {
             <Route
               path="/queue"
               element={
-                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'pharmacist']}>
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'pharmacist', 'lab']}>
                   <Queue />
                 </ProtectedRoute>
               }
@@ -132,7 +132,7 @@ export default function App() {
             <Route
               path="/lab-orders"
               element={
-                <ProtectedRoute roles={['admin', 'doctor', 'receptionist']}>
+                <ProtectedRoute roles={['admin', 'doctor', 'receptionist', 'lab']}>
                   <LabOrders />
                 </ProtectedRoute>
               }

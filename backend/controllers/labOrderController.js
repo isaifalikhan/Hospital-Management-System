@@ -120,10 +120,28 @@ exports.create = async (req, res, next) => {
   }
 };
 
+// Payment comes before the test: reception collects, then the patient walks
+// to the lab. Enforced for the 'lab' role only — admins and the ordering
+// doctor can still push a test through ahead of payment for an emergency or
+// a waived charge, which is a call the bench shouldn't be making alone.
+const WORK_STATUSES = ['in_progress', 'completed'];
+
 exports.update = async (req, res, next) => {
   try {
-    const order = await LabOrder.findByPk(req.params.id);
+    const order = await LabOrder.findByPk(req.params.id, { include: [{ model: Invoice }] });
     if (!order) return res.status(404).json({ message: 'Lab order not found' });
+
+    if (
+      req.user.role === 'lab'
+      && WORK_STATUSES.includes(req.body.status)
+      && order.Invoice
+      && order.Invoice.status !== 'paid'
+    ) {
+      return res.status(403).json({
+        message: `Payment not collected for ${order.testName} (${order.Invoice.invoiceNumber}). Ask the patient to pay at reception first.`,
+      });
+    }
+
     await order.update(req.body);
     await logAudit(req, {
       action: 'update', entityType: 'LabOrder', entityId: order.id,

@@ -8,7 +8,7 @@ const { logAudit } = require('../utils/audit');
 // parent entity elsewhere in the app.
 const ENTITY_CONFIG = {
   MedicalRecord: { model: MedicalRecord, roles: ['admin', 'doctor'] },
-  LabOrder: { model: LabOrder, roles: ['admin', 'doctor'] },
+  LabOrder: { model: LabOrder, roles: ['admin', 'doctor', 'lab'] },
   Admission: { model: Admission, roles: ['admin', 'doctor', 'receptionist'] },
 };
 

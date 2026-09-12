@@ -56,6 +56,8 @@ export default function Queue() {
           doctorName: appt.Doctor?.name,
           specialization: appt.Doctor?.specialization,
           fee: appt.Doctor?.consultationFee,
+          invoiceNumber: appt.Invoice?.invoiceNumber,
+          invoiceStatus: appt.Invoice?.status,
           reason: appt.reason,
           visitType: appt.visitType,
           date: appt.date,

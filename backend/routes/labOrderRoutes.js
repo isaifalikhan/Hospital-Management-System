@@ -8,15 +8,18 @@ const { labOrderValidators } = require('../middleware/validators');
 router.use(authenticate);
 
 // Reception reads the queue too — every order carries the test's bill, and
-// the front desk is who collects it. Ordering tests and entering results
-// stay with the clinical/lab side.
-router.get('/', authorize('admin', 'doctor', 'receptionist'), labOrderController.list);
-router.get('/:id', authorize('admin', 'doctor', 'receptionist'), labOrderController.get);
+// the front desk is who collects it.
+router.get('/', authorize('admin', 'doctor', 'receptionist', 'lab'), labOrderController.list);
+router.get('/:id', authorize('admin', 'doctor', 'receptionist', 'lab'), labOrderController.get);
+
+// Working a test — marking it in progress, entering the result — is the
+// laboratory's job, so 'lab' can update but not raise orders. Ordering stays
+// with the doctors, who decide a test is needed in the first place.
+router.put('/:id', authorize('admin', 'doctor', 'lab'), labOrderController.update);
 
 router.use(authorize('admin', 'doctor'));
 
 router.post('/', labOrderValidators.create, validate, labOrderController.create);
-router.put('/:id', labOrderController.update);
 router.delete('/:id', authorize('admin'), labOrderController.remove);
 
 module.exports = router;

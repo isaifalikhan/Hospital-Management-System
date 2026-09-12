@@ -127,6 +127,14 @@ export default function RegistrationSlip({ patient, visit }) {
               <span>Total Payable</span>
               <span>{formatMoney(fee)}</span>
             </div>
+            {visit.invoiceNumber && (
+              <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2 text-xs text-slate-500">
+                <span>Bill {visit.invoiceNumber}</span>
+                <span className={visit.invoiceStatus === 'paid' ? 'font-semibold text-emerald-600' : 'font-semibold text-rose-600'}>
+                  {visit.invoiceStatus === 'paid' ? 'PAID' : 'PAYABLE AT RECEPTION'}
+                </span>
+              </div>
+            )}
           </div>
           {fee === 0 && (
             <p className="mt-1.5 text-xs text-slate-400 print:hidden">

@@ -12,7 +12,12 @@ export default function LabOrders() {
   // Reception is here for the bills, not the bench work: it can see every
   // order and what it costs, but progressing a test and entering results
   // belong to the lab (see backend/routes/labOrderRoutes.js).
-  const canWorkOrders = ['admin', 'doctor'].includes(user?.role);
+  const canWorkOrders = ['admin', 'doctor', 'lab'].includes(user?.role);
+  // Reception collects before the patient walks to the lab, so the bench
+  // can't start an unpaid test. Admin/doctor can override for an emergency
+  // or a waived charge — the same rule the API enforces.
+  const isBlockedByPayment = (o) =>
+    user?.role === 'lab' && o.Invoice && o.Invoice.status !== 'paid';
 
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
@@ -108,11 +113,19 @@ export default function LabOrders() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {canWorkOrders && o.status === 'ordered' && (
-                      <button onClick={() => handleInProgress(o)} className="text-xs text-indigo-600 hover:underline mr-2">In Progress</button>
-                    )}
-                    {canWorkOrders && (o.status === 'ordered' || o.status === 'in_progress') && (
-                      <button onClick={() => handleResult(o)} className="text-xs text-emerald-600 hover:underline">Enter Result</button>
+                    {canWorkOrders && isBlockedByPayment(o) && o.status !== 'completed' && o.status !== 'cancelled' ? (
+                      <span className="text-xs font-medium text-rose-600" title="Reception has not collected this test's fee yet">
+                        Awaiting payment
+                      </span>
+                    ) : (
+                      <>
+                        {canWorkOrders && o.status === 'ordered' && (
+                          <button onClick={() => handleInProgress(o)} className="text-xs text-indigo-600 hover:underline mr-2">In Progress</button>
+                        )}
+                        {canWorkOrders && (o.status === 'ordered' || o.status === 'in_progress') && (
+                          <button onClick={() => handleResult(o)} className="text-xs text-emerald-600 hover:underline">Enter Result</button>
+                        )}
+                      </>
                     )}
                   </td>
                 </tr>

@@ -8,7 +8,10 @@ const User = sequelize.define('User', {
   email: { type: DataTypes.STRING, allowNull: true },
   password: { type: DataTypes.STRING, allowNull: false },
   role: {
-    type: DataTypes.ENUM('admin', 'doctor', 'receptionist', 'pharmacist'),
+    // 'lab' is the laboratory bench: it works the lab order queue (progress a
+    // test, enter results, attach reports) the way 'pharmacist' owns the
+    // pharmacy, without the clinical or billing access the other roles carry.
+    type: DataTypes.ENUM('admin', 'doctor', 'receptionist', 'pharmacist', 'lab'),
     allowNull: false,
     defaultValue: 'receptionist',
   },

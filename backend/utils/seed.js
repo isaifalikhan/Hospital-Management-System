@@ -32,6 +32,7 @@ async function seed() {
     { name: 'Dr. Sarah Johnson', username: 'sjohnson', email: 'sjohnson@hms.local', password, role: 'doctor' },
     { name: 'Riya Receptionist', username: 'reception', email: 'reception@hms.local', password, role: 'receptionist' },
     { name: 'Pat Pharmacist', username: 'pharmacist', email: 'pharmacist@hms.local', password, role: 'pharmacist' },
+    { name: 'Lena Lab', username: 'lab', email: 'lab@hms.local', password, role: 'lab' },
   ]);
 
   const [cardiology, pediatrics, orthopedics, general] = await Department.bulkCreate([
@@ -281,6 +282,7 @@ async function seed() {
   console.log('  Doctor:       sjohnson / password123');
   console.log('  Receptionist: reception / password123');
   console.log('  Pharmacist:   pharmacist / password123');
+  console.log('  Lab:          lab / password123');
 }
 
 module.exports = seed;

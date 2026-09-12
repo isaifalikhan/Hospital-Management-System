@@ -11,18 +11,18 @@ import { authApi } from '../api';
 import Modal from './Modal';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab'] },
   { to: '/checkin', label: 'OPD', icon: Ticket, roles: ['admin', 'receptionist'] },
-  { to: '/queue', label: 'Queue', icon: PhoneCall, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
-  { to: '/patients', label: 'Patients', icon: Users, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
+  { to: '/queue', label: 'Queue', icon: PhoneCall, roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab'] },
+  { to: '/patients', label: 'Patients', icon: Users, roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab'] },
   { to: '/appointments', label: 'Appointments', icon: CalendarClock, roles: ['admin', 'doctor', 'receptionist'] },
-  { to: '/lab-orders', label: 'Lab Orders', icon: FlaskConical, roles: ['admin', 'doctor', 'receptionist'] },
+  { to: '/lab-orders', label: 'Laboratory', icon: FlaskConical, roles: ['admin', 'doctor', 'receptionist', 'lab'] },
   { to: '/lab-tests', label: 'Lab Test Prices', icon: TestTube, roles: ['admin'] },
   { to: '/admissions', label: 'Admissions', icon: BedDouble, roles: ['admin', 'doctor', 'receptionist'] },
-  { to: '/doctors', label: 'Doctors', icon: Stethoscope, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
+  { to: '/doctors', label: 'Doctors', icon: Stethoscope, roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab'] },
   { to: '/departments', label: 'Departments', icon: Building2, roles: ['admin'] },
-  { to: '/attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
-  { to: '/roster', label: 'Shift Roster', icon: CalendarDays, roles: ['admin', 'doctor', 'receptionist', 'pharmacist'] },
+  { to: '/attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab'] },
+  { to: '/roster', label: 'Shift Roster', icon: CalendarDays, roles: ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab'] },
   { to: '/billing', label: 'Billing', icon: Receipt, roles: ['admin', 'receptionist'] },
   { to: '/pharmacy', label: 'Pharmacy', icon: Pill, roles: ['admin', 'pharmacist'] },
   { to: '/users', label: 'Staff Users', icon: UserCog, roles: ['admin'] },
@@ -36,6 +36,7 @@ const roleColors = {
   doctor: 'bg-emerald-100 text-emerald-700',
   receptionist: 'bg-amber-100 text-amber-700',
   pharmacist: 'bg-sky-100 text-sky-700',
+  lab: 'bg-purple-100 text-purple-700',
 };
 
 const emptyPwForm = { currentPassword: '', newPassword: '', confirmPassword: '' };

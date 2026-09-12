@@ -85,6 +85,8 @@ export default function CheckIn() {
           doctorName: doctor?.name || apptRes.data.Doctor?.name,
           specialization: doctor?.specialization,
           fee: doctor?.consultationFee,
+          invoiceNumber: apptRes.data.Invoice?.invoiceNumber,
+          invoiceStatus: apptRes.data.Invoice?.status,
           reason,
           visitType: 'walk-in',
           date: apptRes.data.date,

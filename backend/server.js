@@ -157,6 +157,20 @@ async function start() {
       }
     }
 
+    // Postgres stores an ENUM as its own named type, so a database created
+    // before the 'lab' role existed rejects that value until the type is
+    // widened — sync() won't do it. SQLite needs nothing here: it emits the
+    // column as plain TEXT with no CHECK constraint, so any value is accepted.
+    // Warn rather than throw, so a naming surprise can't stop the server
+    // booting — the only thing that breaks is creating lab accounts.
+    if (sequelize.getDialect() === 'postgres') {
+      try {
+        await sequelize.query(`ALTER TYPE "enum_users_role" ADD VALUE IF NOT EXISTS 'lab'`);
+      } catch (err) {
+        console.warn('Could not add the "lab" value to enum_users_role:', err.message);
+      }
+    }
+
     // Enforces "one active appointment per doctor/date/time" at the DB level
     // so two concurrent booking requests can't both pass the app-level clash
     // check and double-book the same slot. Cancelled appointments are

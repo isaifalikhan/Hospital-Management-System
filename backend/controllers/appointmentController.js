@@ -1,7 +1,12 @@
-const { Appointment, Patient, Doctor } = require('../models');
+const { Appointment, Patient, Doctor, Invoice, InvoiceItem, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
 const { buildVideoConsultLink } = require('../utils/telemedicine');
+const { generateInvoiceNumber } = require('../utils/billing');
+
+// Billing columns the OPD chalan and the queue need — enough to show the
+// bill number and whether reception has collected it.
+const INVOICE_SUMMARY = ['id', 'invoiceNumber', 'total', 'amountPaid', 'status', 'date'];
 
 exports.list = async (req, res, next) => {
   try {
@@ -21,6 +26,7 @@ exports.list = async (req, res, next) => {
         // consultationFee so the queue can reprint a visit's OPD chalan
         // without a second round-trip for the doctor.
         { model: Doctor, attributes: ['id', 'name', 'specialization', 'consultationFee'] },
+        { model: Invoice, attributes: INVOICE_SUMMARY },
       ],
       order: [['date', 'DESC'], ['time', 'ASC']],
     });
@@ -41,11 +47,20 @@ exports.get = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// A walk-in check-in raises the consultation bill at the same time it issues
+// the token, the way a lab order raises the test's bill. Without it the OPD
+// chalan printed "Total Payable" against nothing, and reception had no record
+// to collect the doctor's fee on. Scheduled bookings are deliberately left
+// out: they're made ahead of time (including by patients themselves through
+// the portal and the public page), and billing a visit nobody has turned up
+// for yet would just fill the billing queue with invoices to cancel.
 exports.create = async (req, res, next) => {
+  const t = await sequelize.transaction();
   try {
     const { patientId, doctorId } = req.body;
     const visitType = req.body.visitType === 'walk-in' ? 'walk-in' : 'scheduled';
     if (!patientId || !doctorId) {
+      await t.rollback();
       return res.status(400).json({ message: 'patientId and doctorId are required' });
     }
 
@@ -66,17 +81,21 @@ exports.create = async (req, res, next) => {
       const last = await Appointment.findOne({
         where: { doctorId, date: payload.date, visitType: 'walk-in' },
         order: [['tokenNumber', 'DESC']],
+        transaction: t,
       });
       payload.tokenNumber = (last?.tokenNumber || 0) + 1;
     } else {
       const { date, time } = req.body;
       if (!date || !time) {
+        await t.rollback();
         return res.status(400).json({ message: 'date and time are required for a scheduled appointment' });
       }
       const clash = await Appointment.findOne({
         where: { doctorId, date, time, status: { [Op.ne]: 'cancelled' } },
+        transaction: t,
       });
       if (clash) {
+        await t.rollback();
         return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
       }
       payload.tokenNumber = null;
@@ -90,24 +109,64 @@ exports.create = async (req, res, next) => {
 
     let appt;
     try {
-      appt = await Appointment.create(payload);
+      appt = await Appointment.create(payload, { transaction: t });
     } catch (err) {
+      await t.rollback();
       if (err.name === 'SequelizeUniqueConstraintError') {
         return res.status(409).json({ message: 'This doctor already has an appointment at that date and time.' });
       }
       throw err;
     }
+
+    // The consultation bill the patient pays at reception before seeing the
+    // doctor. A doctor with no fee set raises nothing, same rule the lab
+    // order billing uses for a free test.
+    const doctor = await Doctor.findByPk(doctorId, { transaction: t });
+    const fee = Number(doctor?.consultationFee) || 0;
+    if (visitType === 'walk-in' && fee > 0) {
+      const invoice = await Invoice.create({
+        invoiceNumber: generateInvoiceNumber(),
+        patientId,
+        appointmentId: appt.id,
+        date: payload.date,
+        subtotal: fee,
+        discount: 0,
+        tax: 0,
+        total: fee,
+        status: 'unpaid',
+        notes: `OPD consultation — ${doctor.name}`,
+      }, { transaction: t });
+
+      await InvoiceItem.create({
+        invoiceId: invoice.id,
+        description: `Consultation — ${doctor.name}`,
+        category: 'consultation',
+        quantity: 1,
+        unitPrice: fee,
+        amount: fee,
+      }, { transaction: t });
+    }
+
+    await t.commit();
+
     const full = await Appointment.findByPk(appt.id, {
-      include: [{ model: Patient, attributes: ['id', 'name', 'mrn'] }, { model: Doctor, attributes: ['id', 'name'] }],
+      include: [
+        { model: Patient, attributes: ['id', 'name', 'mrn'] },
+        { model: Doctor, attributes: ['id', 'name', 'specialization', 'consultationFee'] },
+        { model: Invoice, attributes: INVOICE_SUMMARY },
+      ],
     });
     await logAudit(req, {
       action: 'create', entityType: 'Appointment', entityId: appt.id,
       summary: visitType === 'walk-in'
-        ? `Checked in walk-in patient #${patientId} with doctor #${doctorId} — token #${payload.tokenNumber}`
+        ? `Checked in walk-in patient #${patientId} with doctor #${doctorId} — token #${payload.tokenNumber}${fee > 0 ? ` — billed Rs. ${fee.toFixed(2)}` : ''}`
         : `Booked appointment for patient #${patientId} with doctor #${doctorId} on ${payload.date} ${payload.time}`,
     });
     res.status(201).json(full);
-  } catch (err) { next(err); }
+  } catch (err) {
+    await t.rollback();
+    next(err);
+  }
 };
 
 exports.update = async (req, res, next) => {

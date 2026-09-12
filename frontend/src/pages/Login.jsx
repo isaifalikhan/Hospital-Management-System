@@ -8,6 +8,7 @@ const DEMO_ACCOUNTS = [
   { role: 'Doctor', username: 'sjohnson' },
   { role: 'Receptionist', username: 'reception' },
   { role: 'Pharmacist', username: 'pharmacist' },
+  { role: 'Lab', username: 'lab' },
 ];
 
 // Shown on every build, local and deployed — the owner explicitly wants the
