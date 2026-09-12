@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FlaskConical, Filter } from 'lucide-react';
+import { FlaskConical, Filter, Play, ClipboardCheck } from 'lucide-react';
 import { labOrdersApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { formatMoney } from '../utils/currency';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
+import LabResultModal from '../components/LabResultModal';
 
 export default function LabOrders() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export default function LabOrders() {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [resultTarget, setResultTarget] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -32,15 +34,13 @@ export default function LabOrders() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter]);
 
-  async function handleResult(order) {
-    const result = prompt(`Enter result for ${order.testName}:`);
-    if (result === null) return;
-    try {
-      await labOrdersApi.update(order.id, { status: 'completed', result, resultDate: new Date().toISOString().slice(0, 10) });
-      await load();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update lab order');
-    }
+  // Throws on failure so the modal can surface the message inline (a
+  // payment block comes back as a 403 with a readable reason) instead of
+  // closing as though the result saved.
+  async function handleSaveResult(order, updates) {
+    await labOrdersApi.update(order.id, updates);
+    setResultTarget(null);
+    await load();
   }
 
   async function handleInProgress(order) {
@@ -114,18 +114,36 @@ export default function LabOrders() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {canWorkOrders && isBlockedByPayment(o) && o.status !== 'completed' && o.status !== 'cancelled' ? (
-                      <span className="text-xs font-medium text-rose-600" title="Reception has not collected this test's fee yet">
+                      <span className="badge bg-rose-50 text-rose-700" title="Reception has not collected this test's fee yet">
                         Awaiting payment
                       </span>
                     ) : (
-                      <>
+                      <div className="flex items-center justify-end gap-1.5">
                         {canWorkOrders && o.status === 'ordered' && (
-                          <button onClick={() => handleInProgress(o)} className="text-xs text-indigo-600 hover:underline mr-2">In Progress</button>
+                          <button
+                            onClick={() => handleInProgress(o)}
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                          >
+                            <Play size={12} /> Start
+                          </button>
                         )}
                         {canWorkOrders && (o.status === 'ordered' || o.status === 'in_progress') && (
-                          <button onClick={() => handleResult(o)} className="text-xs text-emerald-600 hover:underline">Enter Result</button>
+                          <button
+                            onClick={() => setResultTarget(o)}
+                            className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+                          >
+                            <ClipboardCheck size={12} /> Enter Result
+                          </button>
                         )}
-                      </>
+                        {o.status === 'completed' && (
+                          <button
+                            onClick={() => setResultTarget(o)}
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                          >
+                            <ClipboardCheck size={12} /> View
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -135,6 +153,12 @@ export default function LabOrders() {
         </table>
         </div>
       </div>
+
+      <LabResultModal
+        order={resultTarget}
+        onClose={() => setResultTarget(null)}
+        onSubmit={handleSaveResult}
+      />
     </div>
   );
 }

@@ -12,6 +12,11 @@ const LabTest = sequelize.define('LabTest', {
   price: { type: DataTypes.FLOAT, defaultValue: 0 },
   sampleType: { type: DataTypes.STRING, allowNull: true }, // e.g. "Blood", "Urine"
   referenceRange: { type: DataTypes.STRING, allowNull: true },
+  // The report's rows: [{ parameter, unit, referenceRange }, ...]. Defining
+  // them once here is what lets the result form open as a ready-made table
+  // with only the value column left to fill in. A test with none (an X-ray,
+  // say) falls back to a free-text narrative result.
+  parameters: { type: DataTypes.JSON, allowNull: true },
   // Retired tests stay on old orders but drop out of the order-form picker.
   active: { type: DataTypes.BOOLEAN, defaultValue: true },
 }, {

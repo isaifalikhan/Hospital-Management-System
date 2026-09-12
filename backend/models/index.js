@@ -13,6 +13,7 @@ const StockTransaction = require('./StockTransaction');
 const PrescriptionItem = require('./PrescriptionItem');
 const LabOrder = require('./LabOrder');
 const LabTest = require('./LabTest');
+const LabResultItem = require('./LabResultItem');
 const Admission = require('./Admission');
 const AuditLog = require('./AuditLog');
 const StaffAttendance = require('./StaffAttendance');
@@ -77,6 +78,11 @@ LabOrder.belongsTo(Doctor, { foreignKey: 'doctorId' });
 LabTest.hasMany(LabOrder, { foreignKey: 'labTestId', onDelete: 'SET NULL' });
 LabOrder.belongsTo(LabTest, { foreignKey: 'labTestId' });
 
+// LabOrder <-> LabResultItem (the report's measured rows). CASCADE: the rows
+// only mean anything as part of their order, same as PrescriptionItem.
+LabOrder.hasMany(LabResultItem, { foreignKey: 'labOrderId', onDelete: 'CASCADE' });
+LabResultItem.belongsTo(LabOrder, { foreignKey: 'labOrderId' });
+
 // LabOrder <-> Invoice: the bill raised for the test, so reception can take
 // payment and the lab can see whether it's been paid.
 Invoice.hasMany(LabOrder, { foreignKey: 'invoiceId', onDelete: 'SET NULL' });
@@ -116,6 +122,7 @@ module.exports = {
   PrescriptionItem,
   LabOrder,
   LabTest,
+  LabResultItem,
   Admission,
   AuditLog,
   StaffAttendance,

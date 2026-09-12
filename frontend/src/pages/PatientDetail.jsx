@@ -14,6 +14,7 @@ import SignaturePad from '../components/SignaturePad';
 import DischargeModal from '../components/DischargeModal';
 import AttachmentList from '../components/AttachmentList';
 import RegistrationSlip from '../components/RegistrationSlip';
+import LabResultModal from '../components/LabResultModal';
 import { formatMoney } from '../utils/currency';
 
 const emptyRecord = {
@@ -61,6 +62,7 @@ export default function PatientDetail() {
   const [labForm, setLabForm] = useState(emptyLabOrder);
   const [savingLab, setSavingLab] = useState(false);
   const [labTests, setLabTests] = useState([]);
+  const [resultTarget, setResultTarget] = useState(null);
 
   const [admitModalOpen, setAdmitModalOpen] = useState(false);
   const [admitForm, setAdmitForm] = useState(emptyAdmission);
@@ -715,12 +717,7 @@ export default function PatientDetail() {
                         <button onClick={() => handleUpdateLabOrder(l, { status: 'in_progress' })} className="text-xs text-indigo-600 hover:underline">Mark In Progress</button>
                       )}
                       <button
-                        onClick={() => {
-                          const result = prompt('Enter result for ' + l.testName + ':');
-                          if (result !== null) {
-                            handleUpdateLabOrder(l, { status: 'completed', result, resultDate: new Date().toISOString().slice(0, 10) });
-                          }
-                        }}
+                        onClick={() => setResultTarget({ ...l, Patient: patient })}
                         className="text-xs text-emerald-600 hover:underline"
                       >
                         Enter Result
@@ -1025,6 +1022,16 @@ export default function PatientDetail() {
         onClose={() => setDischargeTarget(null)}
         onSubmit={handleDischargeSubmit}
         onGenerateSummary={generateDischargeSummary}
+      />
+
+      <LabResultModal
+        order={resultTarget}
+        onClose={() => setResultTarget(null)}
+        onSubmit={async (order, updates) => {
+          await labOrdersApi.update(order.id, updates);
+          setResultTarget(null);
+          await load();
+        }}
       />
 
       <Modal open={slipOpen} onClose={() => setSlipOpen(false)} title="Registration Slip" wide>

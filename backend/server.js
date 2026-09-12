@@ -119,9 +119,24 @@ app.use('/api/setup', setupRoutes);
 // (Vite on :5173 + this server on :5000) is unaffected.
 const frontendDist = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
+  // Vite fingerprints every asset (index-CvDn2sHR.js), so those files can be
+  // cached hard — a new build produces a new name. index.html must never be
+  // cached: it's the only thing that maps to the current filenames, so a
+  // stale copy pins the browser to a previous build's code.
+  app.use(express.static(frontendDist, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      } else if (/[.-][A-Za-z0-9_-]{8,}\.(js|css|woff2?|png|jpe?g|svg|webp)$/.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  }));
   app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+    // Same no-cache rule as above: this path serves index.html for every
+    // client-side route, so it must not pin the browser to an old build.
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
@@ -148,6 +163,7 @@ async function start() {
       ['lab_orders', 'price', { type: DataTypes.FLOAT, defaultValue: 0 }],
       ['lab_orders', 'labTestId', { type: DataTypes.INTEGER, allowNull: true }],
       ['lab_orders', 'invoiceId', { type: DataTypes.INTEGER, allowNull: true }],
+      ['lab_tests', 'parameters', { type: DataTypes.JSON, allowNull: true }],
     ];
     for (const [table, column, spec] of addedColumns) {
       const columns = await queryInterface.describeTable(table);
