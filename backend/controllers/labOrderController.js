@@ -1,4 +1,4 @@
-const { LabOrder, LabTest, Patient, Doctor, Invoice, InvoiceItem, sequelize } = require('../models');
+const { LabOrder, LabTest, LabResultItem, Patient, Doctor, Invoice, InvoiceItem, sequelize } = require('../models');
 const { logAudit } = require('../utils/audit');
 const { deleteAllForEntity } = require('../utils/attachmentStorage');
 const { generateInvoiceNumber } = require('../utils/billing');
@@ -20,6 +20,8 @@ exports.list = async (req, res, next) => {
         { model: Patient, attributes: ['id', 'name', 'mrn'] },
         { model: Doctor, attributes: ['id', 'name'] },
         { model: Invoice, attributes: INVOICE_SUMMARY },
+        { model: LabResultItem },
+        { model: LabTest, attributes: ['id', 'name', 'parameters'] },
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -34,6 +36,8 @@ exports.get = async (req, res, next) => {
         { model: Patient, attributes: { exclude: ['portalPin'] } },
         { model: Doctor },
         { model: Invoice, attributes: INVOICE_SUMMARY },
+        { model: LabResultItem },
+        { model: LabTest, attributes: ['id', 'name', 'parameters'] },
       ],
     });
     if (!order) return res.status(404).json({ message: 'Lab order not found' });
@@ -105,6 +109,8 @@ exports.create = async (req, res, next) => {
         { model: Patient, attributes: ['id', 'name'] },
         { model: Doctor, attributes: ['id', 'name'] },
         { model: Invoice, attributes: INVOICE_SUMMARY },
+        { model: LabResultItem },
+        { model: LabTest, attributes: ['id', 'name', 'parameters'] },
       ],
     });
     await logAudit(req, {
@@ -142,12 +148,49 @@ exports.update = async (req, res, next) => {
       });
     }
 
-    await order.update(req.body);
+    // resultItems is the report table. Replaced wholesale rather than diffed:
+    // a corrected report is retyped as a whole, and stale rows from a previous
+    // version of it must not survive. The text `result` column is composed
+    // from the rows so the patient chart, the printed record and the portal —
+    // all of which read that one field — keep working unchanged.
+    const { resultItems, ...rest } = req.body;
+    await sequelize.transaction(async (t) => {
+      if (Array.isArray(resultItems)) {
+        const rows = resultItems
+          .filter((it) => String(it.parameter || '').trim())
+          .map((it) => ({
+            labOrderId: order.id,
+            parameter: it.parameter,
+            value: it.value ?? '',
+            unit: it.unit || null,
+            referenceRange: it.referenceRange || null,
+            flag: ['normal', 'low', 'high', 'abnormal'].includes(it.flag) ? it.flag : 'normal',
+          }));
+        await LabResultItem.destroy({ where: { labOrderId: order.id }, transaction: t });
+        if (rows.length) await LabResultItem.bulkCreate(rows, { transaction: t });
+        if (rows.length && !String(rest.result || '').trim()) {
+          rest.result = rows
+            .map((r) => `${r.parameter}: ${r.value}${r.unit ? ` ${r.unit}` : ''}${r.referenceRange ? ` (ref ${r.referenceRange})` : ''}${r.flag !== 'normal' ? ` [${r.flag.toUpperCase()}]` : ''}`)
+            .join('\n');
+        }
+      }
+      await order.update(rest, { transaction: t });
+    });
+
+    const full = await LabOrder.findByPk(order.id, {
+      include: [
+        { model: Patient, attributes: ['id', 'name', 'mrn'] },
+        { model: Doctor, attributes: ['id', 'name'] },
+        { model: Invoice, attributes: INVOICE_SUMMARY },
+        { model: LabResultItem },
+        { model: LabTest, attributes: ['id', 'name', 'parameters'] },
+      ],
+    });
     await logAudit(req, {
       action: 'update', entityType: 'LabOrder', entityId: order.id,
       summary: `Updated ${order.testName} (status: ${order.status})`,
     });
-    res.json(order);
+    res.json(full);
   } catch (err) { next(err); }
 };
 

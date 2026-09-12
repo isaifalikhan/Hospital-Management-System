@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { Patient, Appointment, MedicalRecord, Invoice, Doctor, LabOrder, Admission, PrescriptionItem, Immunization } = require('../models');
+const { Patient, Appointment, MedicalRecord, Invoice, Doctor, LabOrder, LabTest, LabResultItem, Admission, PrescriptionItem, Immunization } = require('../models');
 const { Op } = require('sequelize');
 const { logAudit } = require('../utils/audit');
 const { searchOp } = require('../utils/search');
@@ -72,6 +72,8 @@ exports.get = async (req, res, next) => {
             // The test's bill, so the chart shows what was charged and
             // whether reception has collected it.
             { model: Invoice, attributes: ['id', 'invoiceNumber', 'total', 'amountPaid', 'status', 'date'] },
+            { model: LabResultItem },
+            { model: LabTest, attributes: ['id', 'name', 'parameters'] },
           ],
         },
         { model: Admission, include: [{ model: Doctor, attributes: ['id', 'name'] }] },

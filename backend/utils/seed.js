@@ -130,12 +130,50 @@ async function seed() {
     },
   ]);
 
+  // `parameters` is the report table each test opens with, so the lab only
+  // fills in the value column. Imaging tests deliberately have none — their
+  // result is a narrative, not a set of measurements.
   await LabTest.bulkCreate([
-    { name: 'Complete Blood Count (CBC)', price: 800, sampleType: 'Blood', referenceRange: 'See report' },
-    { name: 'Blood Glucose (Fasting)', price: 350, sampleType: 'Blood', referenceRange: '70-100 mg/dL' },
-    { name: 'Lipid Profile', price: 1500, sampleType: 'Blood', referenceRange: 'See report' },
-    { name: 'Liver Function Test (LFT)', price: 1800, sampleType: 'Blood', referenceRange: 'See report' },
-    { name: 'Urine Routine Examination', price: 400, sampleType: 'Urine', referenceRange: 'See report' },
+    {
+      name: 'Complete Blood Count (CBC)', price: 800, sampleType: 'Blood', referenceRange: 'See report',
+      parameters: [
+        { parameter: 'Haemoglobin', unit: 'g/dL', referenceRange: '13.0-17.0' },
+        { parameter: 'WBC Count', unit: '/µL', referenceRange: '4,000-11,000' },
+        { parameter: 'Platelet Count', unit: '/µL', referenceRange: '150,000-410,000' },
+        { parameter: 'Haematocrit', unit: '%', referenceRange: '40-50' },
+      ],
+    },
+    {
+      name: 'Blood Glucose (Fasting)', price: 350, sampleType: 'Blood', referenceRange: '70-100 mg/dL',
+      parameters: [{ parameter: 'Fasting Blood Glucose', unit: 'mg/dL', referenceRange: '70-100' }],
+    },
+    {
+      name: 'Lipid Profile', price: 1500, sampleType: 'Blood', referenceRange: 'See report',
+      parameters: [
+        { parameter: 'Total Cholesterol', unit: 'mg/dL', referenceRange: '< 200' },
+        { parameter: 'HDL Cholesterol', unit: 'mg/dL', referenceRange: '> 40' },
+        { parameter: 'LDL Cholesterol', unit: 'mg/dL', referenceRange: '< 100' },
+        { parameter: 'Triglycerides', unit: 'mg/dL', referenceRange: '< 150' },
+      ],
+    },
+    {
+      name: 'Liver Function Test (LFT)', price: 1800, sampleType: 'Blood', referenceRange: 'See report',
+      parameters: [
+        { parameter: 'Bilirubin (Total)', unit: 'mg/dL', referenceRange: '0.3-1.2' },
+        { parameter: 'ALT (SGPT)', unit: 'U/L', referenceRange: '7-56' },
+        { parameter: 'AST (SGOT)', unit: 'U/L', referenceRange: '10-40' },
+        { parameter: 'Alkaline Phosphatase', unit: 'U/L', referenceRange: '44-147' },
+      ],
+    },
+    {
+      name: 'Urine Routine Examination', price: 400, sampleType: 'Urine', referenceRange: 'See report',
+      parameters: [
+        { parameter: 'Colour', unit: '', referenceRange: 'Pale yellow' },
+        { parameter: 'Protein', unit: '', referenceRange: 'Negative' },
+        { parameter: 'Glucose', unit: '', referenceRange: 'Negative' },
+        { parameter: 'Pus Cells', unit: '/hpf', referenceRange: '0-5' },
+      ],
+    },
     { name: 'Chest X-Ray', price: 1200, sampleType: 'Imaging', referenceRange: 'N/A' },
     { name: 'ECG', price: 900, sampleType: 'Imaging', referenceRange: 'N/A' },
   ]);

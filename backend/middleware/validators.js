@@ -190,10 +190,12 @@ const labTestValidators = {
   create: [
     body('name').trim().notEmpty().withMessage('Test name is required'),
     body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('parameters').optional().isArray().withMessage('parameters must be a list of report rows'),
   ],
   update: [
     body('name').optional().trim().notEmpty().withMessage('Test name is required'),
     body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('parameters').optional().isArray().withMessage('parameters must be a list of report rows'),
   ],
 };
 

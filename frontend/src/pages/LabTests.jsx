@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Search, FlaskConical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, FlaskConical, X } from 'lucide-react';
 import { labTestsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { formatMoney } from '../utils/currency';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 
-const emptyForm = { name: '', price: 0, sampleType: '', referenceRange: '', active: true };
+const emptyForm = { name: '', price: 0, sampleType: '', referenceRange: '', active: true, parameters: [] };
 
 // The hospital's price list for orderable tests. Ordering a test copies the
 // price onto the lab order and raises the patient's bill from it (see
@@ -52,7 +52,7 @@ export default function LabTests() {
 
   function openEdit(test) {
     setEditing(test);
-    setForm({ ...emptyForm, ...test });
+    setForm({ ...emptyForm, ...test, parameters: test.parameters || [] });
     setModalOpen(true);
   }
 
@@ -60,7 +60,11 @@ export default function LabTests() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { ...form, price: Number(form.price) || 0 };
+      const payload = {
+        ...form,
+        price: Number(form.price) || 0,
+        parameters: form.parameters.filter((p) => String(p.parameter || '').trim()),
+      };
       if (editing) {
         await labTestsApi.update(editing.id, payload);
       } else {
@@ -118,7 +122,7 @@ export default function LabTests() {
               <tr>
                 <th className="px-4 py-3">Test</th>
                 <th className="px-4 py-3">Sample</th>
-                <th className="px-4 py-3">Reference Range</th>
+                <th className="px-4 py-3">Report Rows</th>
                 <th className="px-4 py-3 text-right">Price</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -136,7 +140,11 @@ export default function LabTests() {
                       <FlaskConical size={14} className="text-purple-500" /> {t.name}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{t.sampleType || '—'}</td>
-                    <td className="px-4 py-3 text-slate-600">{t.referenceRange || '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {t.parameters?.length
+                        ? <span className="badge bg-indigo-50 text-indigo-700">{t.parameters.length} parameters</span>
+                        : <span className="text-xs text-slate-400">Narrative</span>}
+                    </td>
                     <td className="px-4 py-3 text-right font-medium text-slate-800">{formatMoney(t.price)}</td>
                     <td className="px-4 py-3">
                       {t.active
@@ -180,8 +188,62 @@ export default function LabTests() {
             <input className="input" value={form.sampleType || ''} onChange={(e) => setForm({ ...form, sampleType: e.target.value })} placeholder="e.g. Blood, Urine, Imaging" />
           </div>
           <div className="sm:col-span-2">
-            <label className="label">Reference Range</label>
+            <label className="label">Reference Range <span className="font-normal text-slate-400">(whole test)</span></label>
             <input className="input" value={form.referenceRange || ''} onChange={(e) => setForm({ ...form, referenceRange: e.target.value })} placeholder="e.g. 70-100 mg/dL" />
+          </div>
+
+          {/* The report table this test opens with. Defining the rows here is
+              what reduces entering a result to filling in the Value column —
+              see components/LabResultModal.jsx. */}
+          <div className="sm:col-span-2">
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label mb-0">Report Parameters</label>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, parameters: [...form.parameters, { parameter: '', unit: '', referenceRange: '' }] })}
+                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
+              >
+                <Plus size={13} /> Add parameter
+              </button>
+            </div>
+            {form.parameters.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-xs text-slate-400">
+                No parameters — results for this test are entered as free text (right for X-rays and scans).
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {form.parameters.map((prm, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      className="input flex-1 py-1 text-sm"
+                      placeholder="Parameter (e.g. Haemoglobin)"
+                      value={prm.parameter}
+                      onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, parameter: e.target.value } : x) })}
+                    />
+                    <input
+                      className="input w-24 py-1 text-sm"
+                      placeholder="Unit"
+                      value={prm.unit || ''}
+                      onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, unit: e.target.value } : x) })}
+                    />
+                    <input
+                      className="input w-36 py-1 text-sm"
+                      placeholder="Reference"
+                      value={prm.referenceRange || ''}
+                      onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, referenceRange: e.target.value } : x) })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, parameters: form.parameters.filter((_, idx) => idx !== i) })}
+                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                      title="Remove"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
             <input type="checkbox" checked={!!form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
