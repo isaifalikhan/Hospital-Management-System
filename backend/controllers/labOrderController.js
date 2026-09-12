@@ -150,9 +150,12 @@ exports.update = async (req, res, next) => {
 
     // resultItems is the report table. Replaced wholesale rather than diffed:
     // a corrected report is retyped as a whole, and stale rows from a previous
-    // version of it must not survive. The text `result` column is composed
-    // from the rows so the patient chart, the printed record and the portal —
-    // all of which read that one field — keep working unchanged.
+    // version of it must not survive.
+    //
+    // The measured values live only in these rows; the `result` column stays
+    // the operator's narrative (an imaging report, or an impression written
+    // alongside a panel). Composing the rows back into `result` as well would
+    // mean the same numbers rendered twice wherever both are shown.
     const { resultItems, ...rest } = req.body;
     await sequelize.transaction(async (t) => {
       if (Array.isArray(resultItems)) {
@@ -168,11 +171,6 @@ exports.update = async (req, res, next) => {
           }));
         await LabResultItem.destroy({ where: { labOrderId: order.id }, transaction: t });
         if (rows.length) await LabResultItem.bulkCreate(rows, { transaction: t });
-        if (rows.length && !String(rest.result || '').trim()) {
-          rest.result = rows
-            .map((r) => `${r.parameter}: ${r.value}${r.unit ? ` ${r.unit}` : ''}${r.referenceRange ? ` (ref ${r.referenceRange})` : ''}${r.flag !== 'normal' ? ` [${r.flag.toUpperCase()}]` : ''}`)
-            .join('\n');
-        }
       }
       await order.update(rest, { transaction: t });
     });

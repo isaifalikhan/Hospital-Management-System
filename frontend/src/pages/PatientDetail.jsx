@@ -15,6 +15,7 @@ import DischargeModal from '../components/DischargeModal';
 import AttachmentList from '../components/AttachmentList';
 import RegistrationSlip from '../components/RegistrationSlip';
 import LabResultModal from '../components/LabResultModal';
+import LabResultTable from '../components/LabResultTable';
 import { formatMoney } from '../utils/currency';
 
 const emptyRecord = {
@@ -33,6 +34,18 @@ function formatVitals(r) {
   if (r.vitals) parts.push(r.vitals);
   return parts.join(' · ');
 }
+// One line describing where a lab order has got to, for the visit timeline.
+// A structured result carries its values in LabResultItems rather than in the
+// free-text `result`, so counting them says more than an empty string would.
+function labResultSummary(order) {
+  const rows = order.LabResultItems || [];
+  if (rows.length) {
+    const flagged = rows.filter((r) => r.flag && r.flag !== 'normal').length;
+    return `${rows.length} value${rows.length === 1 ? '' : 's'}${flagged ? ` · ${flagged} out of range` : ' · all normal'}`;
+  }
+  return order.result || 'Awaiting result';
+}
+
 const emptyPrescriptionItem = { medicineId: '', medicineName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' };
 const emptyLabOrder = { labTestId: '', testName: '', price: '', priority: 'routine', notes: '' };
 const emptyAdmission = { ward: '', bedNumber: '', reason: '' };
@@ -363,7 +376,7 @@ export default function PatientDetail() {
     })),
     ...(patient.LabOrders || []).map((l) => ({
       date: l.orderedDate, type: 'lab', icon: FlaskConical, tone: 'text-purple-600 bg-purple-50',
-      title: `Lab order: ${l.testName}`, detail: l.result || 'Awaiting result', status: l.status,
+      title: `Lab order: ${l.testName}`, detail: labResultSummary(l), status: l.status,
     })),
     ...(patient.Admissions || []).map((a) => ({
       date: a.admissionDate, type: 'admission', icon: BedDouble, tone: 'text-amber-600 bg-amber-50',
@@ -710,18 +723,35 @@ export default function PatientDetail() {
                   ) : l.price > 0 ? (
                     <p className="mb-1 text-xs text-slate-500">{formatMoney(l.price)}</p>
                   ) : null}
-                  {l.result && <p className="text-xs text-slate-600">Result: {l.result}</p>}
-                  {canOrderLab && l.status !== 'completed' && l.status !== 'cancelled' && (
+                  {(l.LabResultItems?.length > 0 || l.result) && (
+                    <div className="mb-2 mt-2">
+                      <div className="mb-1 flex items-center justify-between">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                          Result{l.resultDate ? ` · ${l.resultDate}` : ''}
+                        </p>
+                        {l.LabResultItems?.some((r) => r.flag && r.flag !== 'normal') && (
+                          <span className="badge bg-rose-50 text-rose-700">
+                            {l.LabResultItems.filter((r) => r.flag && r.flag !== 'normal').length} out of range
+                          </span>
+                        )}
+                      </div>
+                      <LabResultTable order={l} />
+                      {l.notes && <p className="mt-1 text-xs text-slate-500">Lab note: {l.notes}</p>}
+                    </div>
+                  )}
+                  {canOrderLab && (
                     <div className="mt-1 flex gap-2">
                       {l.status === 'ordered' && (
                         <button onClick={() => handleUpdateLabOrder(l, { status: 'in_progress' })} className="text-xs text-indigo-600 hover:underline">Mark In Progress</button>
                       )}
-                      <button
-                        onClick={() => setResultTarget({ ...l, Patient: patient })}
-                        className="text-xs text-emerald-600 hover:underline"
-                      >
-                        Enter Result
-                      </button>
+                      {l.status !== 'cancelled' && (
+                        <button
+                          onClick={() => setResultTarget({ ...l, Patient: patient })}
+                          className="text-xs text-emerald-600 hover:underline"
+                        >
+                          {l.status === 'completed' ? 'Amend Result' : 'Enter Result'}
+                        </button>
+                      )}
                     </div>
                   )}
 
