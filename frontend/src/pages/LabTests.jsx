@@ -173,9 +173,9 @@ export default function LabTests() {
         </div>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Lab Test' : 'New Lab Test'} wide>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Lab Test' : 'New Lab Test'}>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          <div>
             <label className="label">Test Name *</label>
             <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Complete Blood Count (CBC)" />
           </div>
@@ -187,7 +187,7 @@ export default function LabTests() {
             <label className="label">Sample Type</label>
             <input className="input" value={form.sampleType || ''} onChange={(e) => setForm({ ...form, sampleType: e.target.value })} placeholder="e.g. Blood, Urine, Imaging" />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className="label">Reference Range <span className="font-normal text-slate-400">(whole test)</span></label>
             <input className="input" value={form.referenceRange || ''} onChange={(e) => setForm({ ...form, referenceRange: e.target.value })} placeholder="e.g. 70-100 mg/dL" />
           </div>
@@ -195,7 +195,7 @@ export default function LabTests() {
           {/* The report table this test opens with. Defining the rows here is
               what reduces entering a result to filling in the Value column —
               see components/LabResultModal.jsx. */}
-          <div className="sm:col-span-2">
+          <div>
             <div className="mb-1 flex items-center justify-between">
               <label className="label mb-0">Report Parameters</label>
               <button
@@ -213,43 +213,50 @@ export default function LabTests() {
             ) : (
               <div className="space-y-2">
                 {form.parameters.map((prm, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      className="input flex-1 py-1 text-sm"
-                      placeholder="Parameter (e.g. Haemoglobin)"
-                      value={prm.parameter}
-                      onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, parameter: e.target.value } : x) })}
-                    />
-                    <input
-                      className="input w-24 py-1 text-sm"
-                      placeholder="Unit"
-                      value={prm.unit || ''}
-                      onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, unit: e.target.value } : x) })}
-                    />
-                    <input
-                      className="input w-36 py-1 text-sm"
-                      placeholder="Reference"
-                      value={prm.referenceRange || ''}
-                      onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, referenceRange: e.target.value } : x) })}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, parameters: form.parameters.filter((_, idx) => idx !== i) })}
-                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
-                      title="Remove"
-                    >
-                      <X size={14} />
-                    </button>
+                  /* Stacked, not one wide row: the form is a portrait column, so
+                     the parameter name gets its own line and unit/reference share
+                     the next one. */
+                  <div key={i} className="rounded-lg border border-slate-200 p-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="input flex-1 py-1 text-sm"
+                        placeholder="Parameter (e.g. Haemoglobin)"
+                        value={prm.parameter}
+                        onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, parameter: e.target.value } : x) })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, parameters: form.parameters.filter((_, idx) => idx !== i) })}
+                        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                        title="Remove"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <input
+                        className="input py-1 text-sm"
+                        placeholder="Unit"
+                        value={prm.unit || ''}
+                        onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, unit: e.target.value } : x) })}
+                      />
+                      <input
+                        className="input py-1 text-sm"
+                        placeholder="Reference"
+                        value={prm.referenceRange || ''}
+                        onChange={(e) => setForm({ ...form, parameters: form.parameters.map((x, idx) => idx === i ? { ...x, referenceRange: e.target.value } : x) })}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={!!form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
             Offer this test on the order form
           </label>
-          <div className="mt-2 flex justify-end gap-2 sm:col-span-2">
+          <div className="mt-2 flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Test'}</button>
           </div>

@@ -186,7 +186,7 @@ export default function Billing() {
         </div>
       </div>
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New Invoice" wide>
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New Invoice">
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
             <label className="label">Patient *</label>
@@ -200,34 +200,41 @@ export default function Billing() {
             <label className="label">Line Items</label>
             <div className="space-y-2">
               {items.map((it, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                  <input
-                    className="input col-span-5"
-                    placeholder="Description"
-                    value={it.description}
-                    onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                  />
-                  <select className="input col-span-2" value={it.category} onChange={(e) => updateItem(idx, 'category', e.target.value)}>
+                /* One line item per block rather than one wide row: the modal is
+                   a portrait column, so the description takes a line of its own
+                   and category/qty/price share the line below it. */
+                <div key={idx} className="rounded-lg border border-slate-200 p-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="input flex-1"
+                      placeholder="Description"
+                      value={it.description}
+                      onChange={(e) => updateItem(idx, 'description', e.target.value)}
+                    />
+                    <button type="button" onClick={() => removeItem(idx)} className="rounded p-1.5 text-rose-500 hover:bg-rose-50">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <select className="input mt-2" value={it.category} onChange={(e) => updateItem(idx, 'category', e.target.value)}>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  <input
-                    type="number" min="0" step="1" className="input col-span-2" placeholder="Qty"
-                    value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
-                  />
-                  <input
-                    type="number" min="0" step="0.01" className="input col-span-2" placeholder="Unit price"
-                    value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)}
-                  />
-                  <button type="button" onClick={() => removeItem(idx)} className="col-span-1 rounded p-1.5 text-rose-500 hover:bg-rose-50">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <input
+                      type="number" min="0" step="1" className="input" placeholder="Qty"
+                      value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
+                    />
+                    <input
+                      type="number" min="0" step="0.01" className="input" placeholder="Unit price"
+                      value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
             <button type="button" onClick={addItem} className="mt-2 text-sm text-indigo-600 hover:underline">+ Add line item</button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:w-1/2 sm:ml-auto">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Discount (Rs.)</label>
               <input type="number" min="0" step="0.01" className="input" value={discount} onChange={(e) => setDiscount(e.target.value)} />
@@ -238,7 +245,7 @@ export default function Billing() {
             </div>
           </div>
 
-          <div className="rounded-lg bg-slate-50 p-3 text-sm sm:w-1/2 sm:ml-auto">
+          <div className="rounded-lg bg-slate-50 p-3 text-sm">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
             <div className="flex justify-between"><span>Discount</span><span>-{formatMoney(Number(discount || 0))}</span></div>
             <div className="flex justify-between"><span>Tax</span><span>+{formatMoney(Number(tax || 0))}</span></div>

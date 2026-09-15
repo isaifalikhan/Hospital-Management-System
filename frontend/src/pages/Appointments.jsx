@@ -371,8 +371,8 @@ export default function Appointments() {
         </div>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Appointment' : 'New Appointment'} wide>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Appointment' : 'New Appointment'}>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
           <div>
             <label className="label">Patient *</label>
             <select required className="input" value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })}>
@@ -404,11 +404,11 @@ export default function Appointments() {
             {slotsLoading && <p className="mt-1 text-xs text-slate-400">Checking availability...</p>}
             {!slotsLoading && slotsMessage && <p className="mt-1 text-xs text-amber-600">{slotsMessage}</p>}
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className="label">Reason</label>
             <input className="input" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
@@ -429,11 +429,11 @@ export default function Appointments() {
               </select>
             </div>
           )}
-          <div className="sm:col-span-2">
+          <div>
             <label className="label">Notes</label>
             <textarea className="input" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
-          <div className="sm:col-span-2 mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Appointment'}</button>
           </div>

@@ -234,9 +234,9 @@ export default function Patients() {
         <RegistrationSlip patient={slip?.patient} visit={slip?.visit} />
       </Modal>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Patient' : 'New Patient'} wide>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Patient' : 'New Patient'}>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          <div>
             <label className="label">Full Name *</label>
             <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
@@ -276,7 +276,7 @@ export default function Patients() {
             <label className="label">Email</label>
             <input type="email" className="input" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className="label">Address</label>
             <input className="input" value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
@@ -288,11 +288,11 @@ export default function Patients() {
             <label className="label">Emergency Contact Phone</label>
             <input className="input" value={form.emergencyContactPhone || ''} onChange={(e) => setForm({ ...form, emergencyContactPhone: e.target.value })} />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className="label">Allergies</label>
             <input className="input" value={form.allergies || ''} onChange={(e) => setForm({ ...form, allergies: e.target.value })} placeholder="e.g. Penicillin, None known" />
           </div>
-          <div className="sm:col-span-2 mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Patient'}</button>
           </div>

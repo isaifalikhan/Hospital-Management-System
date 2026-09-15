@@ -153,9 +153,9 @@ export default function StaffUsers() {
         </div>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit User' : 'New User'} wide={!editing && form.role === 'doctor'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit User' : 'New User'}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="label">Full Name *</label>
               <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -183,7 +183,7 @@ export default function StaffUsers() {
               <input required={!editing} type="password" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </div>
             {editing && (
-              <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-600">
+              <label className="flex items-center gap-2 text-sm text-slate-600">
                 <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
                 Active
               </label>
@@ -201,7 +201,7 @@ export default function StaffUsers() {
               <p className="label mb-2">Doctor Profile</p>
 
               {unlinkedDoctors.length > 0 && (
-                <div className="mb-3 flex gap-4 text-sm text-slate-700">
+                <div className="mb-3 flex flex-col gap-1.5 text-sm text-slate-700">
                   <label className="flex items-center gap-1.5">
                     <input type="radio" checked={form.doctorMode === 'link'} onChange={() => setForm({ ...form, doctorMode: 'link' })} />
                     Link an existing doctor profile
@@ -224,7 +224,7 @@ export default function StaffUsers() {
                   </select>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="label">Specialization</label>
                     <input className="input" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} />

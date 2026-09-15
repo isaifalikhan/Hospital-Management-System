@@ -225,9 +225,9 @@ export default function Pharmacy() {
         </div>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Medicine' : 'New Medicine'} wide>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Medicine' : 'New Medicine'}>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          <div>
             <label className="label">Name *</label>
             <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
@@ -260,7 +260,7 @@ export default function Pharmacy() {
             <label className="label">Expiry Date</label>
             <input type="date" className="input" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} />
           </div>
-          <div className="sm:col-span-2 mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex justify-end gap-2">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Medicine'}</button>
           </div>

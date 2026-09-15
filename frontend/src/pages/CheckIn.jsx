@@ -194,8 +194,8 @@ export default function CheckIn() {
                 ) : null}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="sm:col-span-2">
+              <div className="grid grid-cols-1 gap-3">
+                <div>
                   <label className="label">Full Name *</label>
                   <input required className="input" value={newPatient.name} onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })} />
                 </div>
@@ -223,7 +223,7 @@ export default function CheckIn() {
                   <label className="label">Email</label>
                   <input type="email" className="input" value={newPatient.email} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label className="label">Address</label>
                   <input className="input" value={newPatient.address} onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })} />
                 </div>
@@ -235,11 +235,11 @@ export default function CheckIn() {
                   <label className="label">Emergency Contact Phone</label>
                   <input className="input" value={newPatient.emergencyContactPhone} onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })} />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label className="label">Allergies</label>
                   <input className="input" value={newPatient.allergies} onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })} placeholder="e.g. Penicillin, None known" />
                 </div>
-                <p className="text-xs text-slate-400 sm:col-span-2">
+                <p className="text-xs text-slate-400">
                   Everything here is printed on the patient's registration slip and can be edited later from the Patients page.
                 </p>
               </div>
