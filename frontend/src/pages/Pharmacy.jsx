@@ -226,8 +226,8 @@ export default function Pharmacy() {
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Medicine' : 'New Medicine'}>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-          <div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="sm:col-span-3">
             <label className="label">Name *</label>
             <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
@@ -260,7 +260,7 @@ export default function Pharmacy() {
             <label className="label">Expiry Date</label>
             <input type="date" className="input" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} />
           </div>
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex justify-end gap-2 sm:col-span-3">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Medicine'}</button>
           </div>
@@ -269,7 +269,7 @@ export default function Pharmacy() {
 
       <Modal open={!!stockModal} onClose={() => setStockModal(null)} title={stockModal ? `Stock ${stockModal.type === 'in' ? 'In' : 'Out'}: ${stockModal.medicine.name}` : ''}>
         {stockModal && (
-          <form onSubmit={handleStockSubmit} className="space-y-4">
+          <form onSubmit={handleStockSubmit} className="space-y-3">
             <p className="text-sm text-slate-500">Current stock: <span className="font-medium text-slate-800">{stockModal.medicine.quantityInStock}</span> {stockModal.medicine.unit}(s)</p>
             <div>
               <label className="label">Quantity *</label>

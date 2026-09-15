@@ -154,8 +154,8 @@ export default function StaffUsers() {
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit User' : 'New User'}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <div>
               <label className="label">Full Name *</label>
               <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -224,7 +224,7 @@ export default function StaffUsers() {
                   </select>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <div>
                     <label className="label">Specialization</label>
                     <input className="input" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} />

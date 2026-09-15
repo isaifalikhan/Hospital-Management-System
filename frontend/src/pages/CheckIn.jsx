@@ -132,7 +132,7 @@ export default function CheckIn() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-4">
+        <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-2">
           {error && (
             <div className="flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -140,19 +140,19 @@ export default function CheckIn() {
             </div>
           )}
 
-          <div className="card p-5">
-            <div className="mb-3 flex w-fit items-center gap-1 rounded-lg bg-slate-100 p-1">
+          <div className="card p-3">
+            <div className="mb-2 flex w-fit items-center gap-1 rounded-lg bg-slate-100 p-1">
               <button
                 type="button"
                 onClick={() => switchMode('search')}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === 'search' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors ${mode === 'search' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <Search size={14} /> Existing Patient
               </button>
               <button
                 type="button"
                 onClick={() => switchMode('new')}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === 'new' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors ${mode === 'new' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <UserPlus size={14} /> New Patient
               </button>
@@ -194,8 +194,8 @@ export default function CheckIn() {
                 ) : null}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3">
-                <div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="sm:col-span-3">
                   <label className="label">Full Name *</label>
                   <input required className="input" value={newPatient.name} onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })} />
                 </div>
@@ -223,7 +223,7 @@ export default function CheckIn() {
                   <label className="label">Email</label>
                   <input type="email" className="input" value={newPatient.email} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} />
                 </div>
-                <div>
+                <div className="sm:col-span-3">
                   <label className="label">Address</label>
                   <input className="input" value={newPatient.address} onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })} />
                 </div>
@@ -239,14 +239,14 @@ export default function CheckIn() {
                   <label className="label">Allergies</label>
                   <input className="input" value={newPatient.allergies} onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })} placeholder="e.g. Penicillin, None known" />
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-[11px] leading-snug text-slate-400 sm:col-span-3">
                   Everything here is printed on the patient's registration slip and can be edited later from the Patients page.
                 </p>
               </div>
             )}
           </div>
 
-          <div className="card p-5">
+          <div className="card p-3">
             <label className="label">Doctor *</label>
             <select required className="input" value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
               <option value="">Select a doctor</option>
@@ -255,7 +255,7 @@ export default function CheckIn() {
               ))}
             </select>
 
-            <label className="label mt-3">Reason for visit</label>
+            <label className="label mt-2">Reason for visit</label>
             <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Fever, follow-up" />
           </div>
 

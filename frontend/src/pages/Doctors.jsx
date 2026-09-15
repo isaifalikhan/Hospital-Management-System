@@ -132,8 +132,8 @@ export default function Doctors() {
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Doctor' : 'New Doctor'}>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-          <div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="sm:col-span-3">
             <label className="label">Name *</label>
             <input required className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Dr. Jane Smith" />
           </div>
@@ -179,7 +179,7 @@ export default function Doctors() {
             <label className="label">Available Time</label>
             <input className="input" value={form.availableTime} onChange={(e) => setForm({ ...form, availableTime: e.target.value })} placeholder="09:00-17:00" />
           </div>
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex justify-end gap-2 sm:col-span-3">
             <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Doctor'}</button>
           </div>

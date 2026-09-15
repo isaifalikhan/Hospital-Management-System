@@ -170,14 +170,14 @@ export default function Layout() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
             <Outlet />
           </div>
         </main>
       </div>
 
       <Modal open={pwModalOpen} onClose={() => setPwModalOpen(false)} title="Change Password">
-        <form onSubmit={handleChangePassword} className="space-y-4">
+        <form onSubmit={handleChangePassword} className="space-y-3">
           {pwError && (
             <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{pwError}</p>
           )}

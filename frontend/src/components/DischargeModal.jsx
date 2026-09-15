@@ -49,7 +49,7 @@ export default function DischargeModal({ open, admission, onClose, onSubmit, onG
 
   return (
     <Modal open={open} onClose={handleClose} title={admission ? `Discharge ${admission.Patient?.name || 'Patient'}` : 'Discharge Patient'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {admission && (
           <p className="text-sm text-slate-500">
             {admission.ward} · Bed {admission.bedNumber} · Admitted {admission.admissionDate}

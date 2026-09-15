@@ -77,7 +77,7 @@ export default function LabResultModal({ order, onClose, onSubmit }) {
 
   return (
     <Modal open={!!order} onClose={onClose} title="Enter Test Result">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="rounded-lg bg-slate-50 p-3">
           <p className="flex items-center gap-1.5 font-medium text-slate-900">
             <FlaskConical size={15} className="text-purple-500" /> {order.testName}
@@ -116,51 +116,50 @@ export default function LabResultModal({ order, onClose, onSubmit }) {
               No parameters set up for this test in the catalogue — add rows here, or write a narrative result below.
             </p>
           ) : (
-            /* One parameter per block rather than a six-column table: the form is
-               a portrait column, so each parameter stacks its own fields instead
-               of scrolling sideways. */
-            <div className="space-y-2">
-              {rows.map((r, i) => (
-                <div
-                  key={i}
-                  className={`rounded-lg border border-slate-200 p-2 ${r.flag !== 'normal' ? 'bg-rose-50/60' : ''}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="input flex-1 py-1 text-sm"
-                      value={r.parameter}
-                      onChange={(e) => updateRow(i, 'parameter', e.target.value)}
-                      placeholder="Parameter"
-                    />
-                    <button type="button" onClick={() => removeRow(i)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-rose-600" title="Remove row">
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-0.5 block text-[11px] font-medium uppercase tracking-wide text-slate-500">Value</label>
-                      <input className="input py-1 text-sm font-semibold" value={r.value} onChange={(e) => updateRow(i, 'value', e.target.value)} placeholder="—" />
-                    </div>
-                    <div>
-                      <label className="mb-0.5 block text-[11px] font-medium uppercase tracking-wide text-slate-500">Unit</label>
-                      <input className="input py-1 text-sm" value={r.unit} onChange={(e) => updateRow(i, 'unit', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="mb-0.5 block text-[11px] font-medium uppercase tracking-wide text-slate-500">Reference</label>
-                      <input className="input py-1 text-sm" value={r.referenceRange} onChange={(e) => updateRow(i, 'referenceRange', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="mb-0.5 block text-[11px] font-medium uppercase tracking-wide text-slate-500">Flag</label>
-                      <select className="input py-1 text-sm" value={r.flag} onChange={(e) => updateRow(i, 'flag', e.target.value)}>
-                        <option value="normal">Normal</option>
-                        <option value="low">Low</option>
-                        <option value="high">High</option>
-                        <option value="abnormal">Abnormal</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">Parameter</th>
+                    <th className="w-28 px-3 py-2">Value</th>
+                    <th className="w-24 px-3 py-2">Unit</th>
+                    <th className="w-32 px-3 py-2">Reference</th>
+                    <th className="w-28 px-3 py-2">Flag</th>
+                    <th className="w-8" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rows.map((r, i) => (
+                    <tr key={i} className={r.flag !== 'normal' ? 'bg-rose-50/60' : ''}>
+                      <td className="px-2 py-1">
+                        <input className="input py-1 text-sm" value={r.parameter} onChange={(e) => updateRow(i, 'parameter', e.target.value)} placeholder="Parameter" />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input className="input py-1 text-sm font-semibold" value={r.value} onChange={(e) => updateRow(i, 'value', e.target.value)} placeholder="—" />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input className="input py-1 text-sm" value={r.unit} onChange={(e) => updateRow(i, 'unit', e.target.value)} />
+                      </td>
+                      <td className="px-2 py-1">
+                        <input className="input py-1 text-sm" value={r.referenceRange} onChange={(e) => updateRow(i, 'referenceRange', e.target.value)} />
+                      </td>
+                      <td className="px-2 py-1">
+                        <select className="input py-1 text-sm" value={r.flag} onChange={(e) => updateRow(i, 'flag', e.target.value)}>
+                          <option value="normal">Normal</option>
+                          <option value="low">Low</option>
+                          <option value="high">High</option>
+                          <option value="abnormal">Abnormal</option>
+                        </select>
+                      </td>
+                      <td className="px-1">
+                        <button type="button" onClick={() => removeRow(i)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-rose-600" title="Remove row">
+                          <X size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
           <p className="mt-1 text-xs text-slate-400">
@@ -168,8 +167,8 @@ export default function LabResultModal({ order, onClose, onSubmit }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          <div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="sm:col-span-2">
             <label className="label">
               Narrative Result {rows.length > 0 && <span className="font-normal text-slate-400">(optional)</span>}
             </label>

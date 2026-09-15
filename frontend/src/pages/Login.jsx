@@ -61,7 +61,7 @@ export default function Login() {
         </div>
 
         <div className="card p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {error && (
               <div className="flex items-start gap-2 rounded-lg border border-rose-200/70 bg-rose-50 px-3 py-2 text-sm text-rose-700 shadow-[inset_0_1px_0_rgb(255_255_255/0.9)]">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />

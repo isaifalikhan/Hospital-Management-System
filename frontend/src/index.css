@@ -208,8 +208,10 @@ body {
 
 /* Inset shadow reads as recessed glass — the opposite of the raised surfaces
    above, which is what tells a field apart from a button at a glance. */
+/* Compact by design: forms are a single portrait column, so every row of
+   vertical padding is a row the receptionist has to scroll past. */
 .input {
-  @apply w-full rounded-lg px-3 py-2 text-sm text-slate-900 transition;
+  @apply w-full rounded-lg px-3 py-1 text-sm text-slate-900 transition;
   border: 1px solid rgb(148 163 184 / 0.45);
   background-image: linear-gradient(
     180deg,
@@ -240,7 +242,7 @@ body {
 }
 
 .label {
-  @apply mb-1.5 block text-sm font-semibold text-slate-700;
+  @apply mb-0.5 block text-xs font-semibold text-slate-700;
 }
 
 /* ── Badges ───────────────────────────────────────────────────────────── */

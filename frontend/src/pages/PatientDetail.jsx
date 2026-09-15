@@ -855,10 +855,10 @@ export default function PatientDetail() {
       </div>
 
       <Modal open={recordModalOpen} onClose={() => setRecordModalOpen(false)} title="Add Medical Record">
-        <form onSubmit={handleAddRecord} className="space-y-4">
+        <form onSubmit={handleAddRecord} className="space-y-3">
           <div>
             <label className="label">Vitals</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <div className="col-span-2 flex items-center gap-1">
                 <input type="number" className="input" placeholder="Systolic" value={recordForm.bpSystolic} onChange={(e) => setRecordForm({ ...recordForm, bpSystolic: e.target.value })} />
                 <span className="text-slate-400">/</span>
@@ -888,31 +888,24 @@ export default function PatientDetail() {
             <label className="label">Prescription Items</label>
             <div className="space-y-2">
               {prescriptionItems.map((item, idx) => (
-                /* One medicine per block rather than one wide row: the form is a
-                   portrait column, so the inventory picker and the medicine name
-                   take a line each and dosage/frequency/duration/qty pair up below. */
-                <div key={idx} className="rounded-lg border border-slate-200 p-2">
-                  <div className="flex items-center gap-2">
-                    <select
-                      className="input flex-1"
-                      value={item.medicineId}
-                      onChange={(e) => selectPrescriptionMedicine(idx, e.target.value)}
-                      title="Link to inventory (optional)"
-                    >
-                      <option value="">From inventory…</option>
-                      {medicines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                    <button type="button" onClick={() => removePrescriptionRow(idx)} className="rounded p-1.5 text-rose-500 hover:bg-rose-50">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <input className="input mt-2" placeholder="Medicine" value={item.medicineName} onChange={(e) => updatePrescriptionRow(idx, 'medicineName', e.target.value)} />
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <input className="input" placeholder="Dosage" value={item.dosage} onChange={(e) => updatePrescriptionRow(idx, 'dosage', e.target.value)} />
-                    <input className="input" placeholder="Frequency" value={item.frequency} onChange={(e) => updatePrescriptionRow(idx, 'frequency', e.target.value)} />
-                    <input className="input" placeholder="Duration" value={item.duration} onChange={(e) => updatePrescriptionRow(idx, 'duration', e.target.value)} />
-                    <input type="number" min="1" className="input" placeholder="Qty" value={item.quantity} onChange={(e) => updatePrescriptionRow(idx, 'quantity', e.target.value)} />
-                  </div>
+                <div key={idx} className="grid grid-cols-12 items-center gap-2">
+                  <select
+                    className="input col-span-2"
+                    value={item.medicineId}
+                    onChange={(e) => selectPrescriptionMedicine(idx, e.target.value)}
+                    title="Link to inventory (optional)"
+                  >
+                    <option value="">From inventory…</option>
+                    {medicines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <input className="input col-span-2" placeholder="Medicine" value={item.medicineName} onChange={(e) => updatePrescriptionRow(idx, 'medicineName', e.target.value)} />
+                  <input className="input col-span-2" placeholder="Dosage" value={item.dosage} onChange={(e) => updatePrescriptionRow(idx, 'dosage', e.target.value)} />
+                  <input className="input col-span-2" placeholder="Frequency" value={item.frequency} onChange={(e) => updatePrescriptionRow(idx, 'frequency', e.target.value)} />
+                  <input className="input col-span-1" placeholder="Duration" value={item.duration} onChange={(e) => updatePrescriptionRow(idx, 'duration', e.target.value)} />
+                  <input type="number" min="1" className="input col-span-2" placeholder="Qty" value={item.quantity} onChange={(e) => updatePrescriptionRow(idx, 'quantity', e.target.value)} />
+                  <button type="button" onClick={() => removePrescriptionRow(idx)} className="col-span-1 rounded p-1.5 text-rose-500 hover:bg-rose-50">
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -950,7 +943,7 @@ export default function PatientDetail() {
       </Modal>
 
       <Modal open={labModalOpen} onClose={() => setLabModalOpen(false)} title="Order Lab Test">
-        <form onSubmit={handleAddLabOrder} className="space-y-4">
+        <form onSubmit={handleAddLabOrder} className="space-y-3">
           <div>
             <label className="label">Test *</label>
             <select className="input" value={labForm.labTestId} onChange={(e) => selectLabTest(e.target.value)}>
@@ -992,7 +985,7 @@ export default function PatientDetail() {
       </Modal>
 
       <Modal open={admitModalOpen} onClose={() => setAdmitModalOpen(false)} title="Admit Patient">
-        <form onSubmit={handleAdmit} className="space-y-4">
+        <form onSubmit={handleAdmit} className="space-y-3">
           <div>
             <label className="label">Ward *</label>
             <input required className="input" value={admitForm.ward} onChange={(e) => setAdmitForm({ ...admitForm, ward: e.target.value })} placeholder="e.g. General Ward, ICU" />
@@ -1013,7 +1006,7 @@ export default function PatientDetail() {
       </Modal>
 
       <Modal open={immModalOpen} onClose={() => setImmModalOpen(false)} title="Add Immunization">
-        <form onSubmit={handleAddImmunization} className="space-y-4">
+        <form onSubmit={handleAddImmunization} className="space-y-3">
           <div>
             <label className="label">Vaccine *</label>
             <input required className="input" value={immForm.vaccineName} onChange={(e) => setImmForm({ ...immForm, vaccineName: e.target.value })} placeholder="e.g. Influenza, Tetanus, COVID-19" />

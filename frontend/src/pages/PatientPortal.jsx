@@ -253,7 +253,7 @@ export default function PatientPortal() {
       </main>
 
       <Modal open={bookOpen} onClose={() => setBookOpen(false)} title="Book an Appointment">
-        <form onSubmit={handleBook} className="space-y-4">
+        <form onSubmit={handleBook} className="space-y-3">
           <div>
             <label className="label">Doctor *</label>
             <select required className="input" value={form.doctorId} onChange={(e) => setForm({ ...form, doctorId: e.target.value, time: '' })}>

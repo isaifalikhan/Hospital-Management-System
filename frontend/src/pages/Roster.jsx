@@ -154,7 +154,7 @@ export default function Roster() {
 
       {isAdmin && (
         <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Shift' : 'New Shift'}>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="label">Staff Member *</label>
               <select required className="input" value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })}>

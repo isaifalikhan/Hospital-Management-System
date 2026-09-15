@@ -115,7 +115,7 @@ export default function PublicBooking() {
           </div>
         ) : (
           <div className="card p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {error && (
                 <div className="flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -184,7 +184,7 @@ export default function PublicBooking() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <div>
                   <label className="label">Your name *</label>
                   <input
@@ -206,17 +206,16 @@ export default function PublicBooking() {
                     placeholder="e.g. 555-0100"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="label">Email (optional)</label>
-                <input
-                  type="email"
-                  className="input"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@example.com"
-                />
+                <div>
+                  <label className="label">Email (optional)</label>
+                  <input
+                    type="email"
+                    className="input"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="you@example.com"
+                  />
+                </div>
               </div>
 
               <div>
